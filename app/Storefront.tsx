@@ -156,7 +156,13 @@ export function Storefront({
   const featuredProduct =
     products.find(
       (product) => product.handle === merchandising.featuredProductHandle,
-    ) ?? products[0];
+    );
+  const syrahProduct = products.find(
+    (product) => product.handle === "syrah-cork-sunglasses",
+  );
+  const cabernetProduct = products.find(
+    (product) => product.handle === "cabernet-sauvignon-cork-sunglasses",
+  );
 
   useEffect(() => {
     try {
@@ -389,8 +395,9 @@ export function Storefront({
           </p>
         </section>
 
+        {(syrahProduct || cabernetProduct) && (
         <section className="feature-pair">
-          <article className="feature-card feature-syrah">
+          {syrahProduct && <article className="feature-card feature-syrah">
             <div className="feature-image">
               <img src="/brand/syrah.jpg" alt="Syrah cork sunglasses" />
               <span>01 / 02</span>
@@ -405,18 +412,14 @@ export function Storefront({
               <button
                 className="text-link"
                 type="button"
-                onClick={() =>
-                  setSelectedProduct(
-                    products.find((product) => product.handle === "syrah-cork-sunglasses") ?? null,
-                  )
-                }
+                onClick={() => setSelectedProduct(syrahProduct)}
               >
                 View Syrah <span>→</span>
               </button>
             </div>
-          </article>
+          </article>}
 
-          <article className="feature-card feature-cabernet">
+          {cabernetProduct && <article className="feature-card feature-cabernet">
             <div className="feature-copy">
               <p className="eyebrow">Bold & unforgettable</p>
               <h2>Cabernet Sauvignon</h2>
@@ -427,14 +430,7 @@ export function Storefront({
               <button
                 className="text-link"
                 type="button"
-                onClick={() =>
-                  setSelectedProduct(
-                    products.find(
-                      (product) =>
-                        product.handle === "cabernet-sauvignon-cork-sunglasses",
-                    ) ?? null,
-                  )
-                }
+                onClick={() => setSelectedProduct(cabernetProduct)}
               >
                 View Cabernet <span>→</span>
               </button>
@@ -443,8 +439,9 @@ export function Storefront({
               <img src="/brand/cabernet.jpg" alt="Cabernet Sauvignon cork sunglasses" />
               <span>02 / 02</span>
             </div>
-          </article>
+          </article>}
         </section>
+        )}
 
         <section className="catalog-section" id="catalog">
           <div className="catalog-heading">
