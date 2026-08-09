@@ -1,8 +1,14 @@
 import { Storefront } from "./Storefront";
-import { getHiddenProductHandles } from "../db/merchandising";
+import { getMerchandisingSettings } from "../db/merchandising";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  return <Storefront initialHiddenHandles={await getHiddenProductHandles()} />;
+  const { hiddenProductHandles, productImageSettings } = await getMerchandisingSettings();
+  return (
+    <Storefront
+      initialHiddenHandles={hiddenProductHandles}
+      initialProductImageSettings={productImageSettings}
+    />
+  );
 }

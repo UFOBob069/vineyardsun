@@ -54,18 +54,22 @@ test("ships a complete local catalog snapshot and checkout adapter", async () =>
 });
 
 test("includes a password-protected persistent product admin", async () => {
-  const [adminClient, adminAuth, productsRoute, database, merchandising, environment] =
+  const [adminClient, adminAuth, productsRoute, database, merchandising, environment, storefront] =
     await Promise.all([
-    readFile(new URL("../app/admin/AdminClient.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/admin-auth.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../db/index.ts", import.meta.url), "utf8"),
-    readFile(new URL("../db/merchandising.ts", import.meta.url), "utf8"),
-    readFile(new URL("../.env.example", import.meta.url), "utf8"),
-  ]);
+      readFile(new URL("../app/admin/AdminClient.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/admin-auth.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/index.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/merchandising.ts", import.meta.url), "utf8"),
+      readFile(new URL("../.env.example", import.meta.url), "utf8"),
+      readFile(new URL("../app/Storefront.tsx", import.meta.url), "utf8"),
+    ]);
 
   assert.match(adminClient, /Save changes/);
   assert.match(adminClient, /role="switch"/);
+  assert.match(adminClient, /Add image URL/);
+  assert.match(adminClient, /role="radio"/);
+  assert.match(adminClient, /productImageSettings/);
   assert.match(adminAuth, /ADMIN_PASSWORD/);
   assert.match(adminAuth, /HttpOnly; Secure; SameSite=Strict/);
   assert.doesNotMatch(adminAuth, /length\s*[<>]=?\s*12/);
@@ -74,5 +78,8 @@ test("includes a password-protected persistent product admin", async () => {
   assert.match(database, /@neondatabase\/serverless/);
   assert.match(database, /DATABASE_URL/);
   assert.match(merchandising, /merchandising_settings/);
+  assert.match(merchandising, /product_images/);
+  assert.match(storefront, /initialProductImageSettings/);
+  assert.match(storefront, /dialog-thumbnails/);
   assert.match(environment, /DATABASE_URL=postgresql:/);
 });

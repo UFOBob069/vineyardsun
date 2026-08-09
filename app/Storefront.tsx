@@ -9,6 +9,7 @@ import {
 } from "react";
 import catalogData from "./data/catalog.json";
 import merchandisingData from "./data/merchandising.json";
+import type { ProductImageSettings } from "./lib/product-image-settings";
 
 type Variant = {
   id: number;
@@ -27,6 +28,7 @@ type Product = {
   fulfillment: "local" | "printful";
   description: string;
   image: string | null;
+  images?: string[];
   available: boolean;
   variants: Variant[];
 };
@@ -118,8 +120,10 @@ function fulfillmentCopy(product: Product) {
 
 export function Storefront({
   initialHiddenHandles,
+  initialProductImageSettings,
 }: {
   initialHiddenHandles: string[];
+  initialProductImageSettings: ProductImageSettings;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -140,6 +144,19 @@ export function Storefront({
     );
 
     return allProducts
+      .map((product) => {
+        const imageSetting = initialProductImageSettings[product.handle];
+        const images = [
+          imageSetting?.defaultUrl,
+          product.image,
+          ...(imageSetting?.urls ?? []),
+        ].filter(
+          (image, index, values): image is string =>
+            Boolean(image) && values.indexOf(image) === index,
+        );
+
+        return { ...product, image: images[0] ?? null, images };
+      })
       .filter(
         (product) =>
           !hiddenHandles.has(product.handle) &&
@@ -152,7 +169,7 @@ export function Storefront({
           priorityByHandle.get(second.handle) ?? Number.MAX_SAFE_INTEGER;
         return firstPriority - secondPriority;
       });
-  }, [initialHiddenHandles]);
+  }, [initialHiddenHandles, initialProductImageSettings]);
   const featuredProduct =
     products.find(
       (product) => product.handle === merchandising.featuredProductHandle,
@@ -801,6 +818,7 @@ function ProductDialog({
   const firstAvailable =
     product.variants.find((variant) => variant.available) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstAvailable.id);
+  const [activeImage, setActiveImage] = useState(product.image);
   const selectedVariant =
     product.variants.find((variant) => variant.id === variantId) ?? firstAvailable;
 
@@ -821,8 +839,26 @@ function ProductDialog({
         <button className="close-button" type="button" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <div className="dialog-image">
-          {product.image && <img src={product.image} alt={product.title} />}
+        <div className="dialog-media">
+          <div className="dialog-image">
+            {activeImage && <img src={activeImage} alt={product.title} />}
+          </div>
+          {(product.images?.length ?? 0) > 1 && (
+            <div className="dialog-thumbnails" aria-label="Product images">
+              {product.images?.map((image, index) => (
+                <button
+                  aria-label={`View image ${index + 1}`}
+                  aria-pressed={image === activeImage}
+                  className={image === activeImage ? "active" : ""}
+                  key={image}
+                  onClick={() => setActiveImage(image)}
+                  type="button"
+                >
+                  <img src={image} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="dialog-copy">
           <p className="eyebrow">{fulfillmentCopy(product)}</p>

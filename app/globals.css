@@ -1183,12 +1183,41 @@ a.partner-card:hover {
   z-index: 2;
 }
 
-.dialog-image {
+.dialog-media {
   background: #efebe2;
+}
+
+.dialog-image {
   min-height: 630px;
 }
 
 .dialog-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.dialog-thumbnails {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 10px;
+}
+
+.dialog-thumbnails button {
+  aspect-ratio: 1;
+  background: white;
+  border: 1px solid transparent;
+  cursor: pointer;
+  min-width: 0;
+  padding: 3px;
+}
+
+.dialog-thumbnails button.active {
+  border-color: var(--wine);
+}
+
+.dialog-thumbnails img {
   height: 100%;
   object-fit: cover;
   width: 100%;
