@@ -44,12 +44,12 @@ async function signature(timestamp: string, password: string) {
 }
 
 export function adminPasswordIsConfigured() {
-  return configuredPassword().length >= 12;
+  return configuredPassword().length > 0;
 }
 
 export async function passwordMatches(candidate: string) {
   const password = configuredPassword();
-  if (password.length < 12) return false;
+  if (!password) return false;
   return constantTimeEqual(await digest(candidate), await digest(password));
 }
 
@@ -66,7 +66,7 @@ export function clearAdminCookie() {
 
 export async function requestIsAdmin(request: Request) {
   const password = configuredPassword();
-  if (password.length < 12) return false;
+  if (!password) return false;
 
   const cookieHeader = request.headers.get("cookie") ?? "";
   const token = cookieHeader

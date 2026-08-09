@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   }
   if (!adminPasswordIsConfigured()) {
     return Response.json(
-      { error: "Set ADMIN_PASSWORD to at least 12 characters before signing in." },
+      { error: "Set ADMIN_PASSWORD before signing in." },
       { status: 503 },
     );
   }

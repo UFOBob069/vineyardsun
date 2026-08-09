@@ -68,6 +68,8 @@ test("includes a password-protected persistent product admin", async () => {
   assert.match(adminClient, /role="switch"/);
   assert.match(adminAuth, /ADMIN_PASSWORD/);
   assert.match(adminAuth, /HttpOnly; Secure; SameSite=Strict/);
+  assert.doesNotMatch(adminAuth, /length\s*[<>]=?\s*12/);
+  assert.doesNotMatch(adminClient, /minLength=\{12\}|at least\s+12 characters/i);
   assert.match(productsRoute, /requestIsAdmin/);
   assert.match(database, /@neondatabase\/serverless/);
   assert.match(database, /DATABASE_URL/);

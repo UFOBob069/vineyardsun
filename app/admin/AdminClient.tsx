@@ -137,7 +137,6 @@ export function AdminClient() {
             <input
               autoComplete="current-password"
               disabled={!configured}
-              minLength={12}
               onChange={(event) => setPassword(event.target.value)}
               required
               type="password"
@@ -146,8 +145,8 @@ export function AdminClient() {
           </label>
           {!configured && (
             <div className={styles.notice}>
-              Set the <code>ADMIN_PASSWORD</code> environment variable to at least
-              12 characters, then redeploy the site.
+              Set the <code>ADMIN_PASSWORD</code> environment variable, then
+              redeploy the site.
             </div>
           )}
           {error && <p className={styles.error} role="alert">{error}</p>}
