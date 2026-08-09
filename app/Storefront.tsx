@@ -48,26 +48,6 @@ type MerchandisingConfig = {
 
 const allProducts = catalogData as Product[];
 const merchandising = merchandisingData as MerchandisingConfig;
-const allowedHandles = new Set(merchandising.catalogProductHandles);
-const hiddenHandles = new Set(merchandising.hiddenProductHandles);
-const priorityByHandle = new Map(
-  merchandising.priorityProductHandles.map((handle, index) => [handle, index]),
-);
-const products = allProducts
-  .filter(
-    (product) =>
-      !hiddenHandles.has(product.handle) &&
-      (allowedHandles.size === 0 || allowedHandles.has(product.handle)),
-  )
-  .sort((first, second) => {
-    const firstPriority = priorityByHandle.get(first.handle) ?? Number.MAX_SAFE_INTEGER;
-    const secondPriority = priorityByHandle.get(second.handle) ?? Number.MAX_SAFE_INTEGER;
-    return firstPriority - secondPriority;
-  });
-const featuredProduct =
-  allProducts.find(
-    (product) => product.handle === merchandising.featuredProductHandle,
-  ) ?? products[0];
 
 const partners = [
   {
@@ -136,7 +116,11 @@ function fulfillmentCopy(product: Product) {
     : "Ships from our studio";
 }
 
-export function Storefront() {
+export function Storefront({
+  initialHiddenHandles,
+}: {
+  initialHiddenHandles: string[];
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -145,6 +129,34 @@ export function Storefront() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartReady, setCartReady] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const products = useMemo(() => {
+    const allowedHandles = new Set(merchandising.catalogProductHandles);
+    const hiddenHandles = new Set([
+      ...merchandising.hiddenProductHandles,
+      ...initialHiddenHandles,
+    ]);
+    const priorityByHandle = new Map(
+      merchandising.priorityProductHandles.map((handle, index) => [handle, index]),
+    );
+
+    return allProducts
+      .filter(
+        (product) =>
+          !hiddenHandles.has(product.handle) &&
+          (allowedHandles.size === 0 || allowedHandles.has(product.handle)),
+      )
+      .sort((first, second) => {
+        const firstPriority =
+          priorityByHandle.get(first.handle) ?? Number.MAX_SAFE_INTEGER;
+        const secondPriority =
+          priorityByHandle.get(second.handle) ?? Number.MAX_SAFE_INTEGER;
+        return firstPriority - secondPriority;
+      });
+  }, [initialHiddenHandles]);
+  const featuredProduct =
+    products.find(
+      (product) => product.handle === merchandising.featuredProductHandle,
+    ) ?? products[0];
 
   useEffect(() => {
     try {
@@ -188,7 +200,7 @@ export function Storefront() {
           .includes(normalizedQuery);
       return categoryMatch && searchMatch;
     });
-  }, [filter, query]);
+  }, [filter, products, query]);
 
   const cartDetails = cart
     .map((line) => {
@@ -294,22 +306,43 @@ export function Storefront() {
       </header>
 
       <main id="top">
+        <section className="hero-section" aria-labelledby="hero-title">
+          <div className="hero-content">
+            <p className="eyebrow light">Made for the golden hour</p>
+            <h1 id="hero-title">The wine lover&apos;s eyewear.</h1>
+            <p className="hero-copy">
+              Cork-framed originals, sunny-day essentials, and a side collection
+              for people who appreciate a good story.
+            </p>
+            <a className="button button-light" href="#catalog">
+              Shop the collection
+            </a>
+          </div>
+          <div className="hero-caption">Vineyard Sun · California</div>
+        </section>
+
+        <section className="service-strip" aria-label="Store benefits">
+          <p><span>01</span> Independent since 2017</p>
+          <p><span>02</span> Small-batch favorites</p>
+          <p><span>03</span> Secure checkout</p>
+        </section>
+
         {featuredProduct && (
-          <section className="hero-section" aria-labelledby="hero-title">
-            <div className="hero-content">
+          <section className="pillow-feature" aria-labelledby="pillow-title">
+            <div className="pillow-content">
               <p className="eyebrow light">Bestseller · embroidered</p>
-              <h1 id="hero-title">Happiness is positive cash flow.</h1>
-              <p className="hero-copy">
+              <h2 id="pillow-title">Happiness is positive cash flow.</h2>
+              <p className="pillow-copy">
                 Our signature navy pillow brings a little optimism to the office,
                 study, or trading desk—with the reminder stitched right in.
               </p>
-              <div className="hero-price">
+              <div className="pillow-price">
                 <strong>{money(startingPrice(featuredProduct))}</strong>
                 {featuredProduct.variants[0]?.compareAtPrice && (
                   <span>{money(featuredProduct.variants[0].compareAtPrice)}</span>
                 )}
               </div>
-              <div className="hero-actions">
+              <div className="pillow-actions">
                 <button
                   className="button button-light"
                   type="button"
@@ -332,12 +365,12 @@ export function Storefront() {
               </div>
             </div>
             <button
-              className="hero-product"
+              className="pillow-product"
               type="button"
               onClick={() => setSelectedProduct(featuredProduct)}
               aria-label={`View ${featuredProduct.title}`}
             >
-              <span className="hero-product-badge">No. 1 bestseller</span>
+              <span className="pillow-product-badge">No. 1 bestseller</span>
               <img
                 src="/brand/cash-flow-pillow.jpg"
                 alt="Navy Happiness is Positive Cash Flow embroidered pillow"
@@ -345,40 +378,6 @@ export function Storefront() {
             </button>
           </section>
         )}
-
-        <section className="service-strip" aria-label="Store benefits">
-          <p><span>01</span> Independent since 2017</p>
-          <p><span>02</span> Small-batch favorites</p>
-          <p><span>03</span> Secure checkout</p>
-        </section>
-
-        <section className="about-section" id="about">
-          <div className="about-image">
-            <img
-              src="/brand/founder.png"
-              alt="Vineyard Sun founder Joseph O'Bell in Napa Valley"
-            />
-            <span>Joseph O&apos;Bell · Founder</span>
-          </div>
-          <div className="about-copy">
-            <p className="eyebrow">About Vineyard Sun</p>
-            <h2>Born after a winery weekend near Austin.</h2>
-            <p>
-              Vineyard Sun is a lifestyle eyewear line for people who love wine
-              and vineyards. Founder Joseph O&apos;Bell had the idea after a winery
-              tour near Austin, Texas: cork sunglasses felt like the natural
-              companion to the experience.
-            </p>
-            <p>
-              After refining the designs, Vineyard Sun launched in spring 2017
-              with two original cork styles—Syrah and Cabernet Sauvignon—and a
-              belief that useful things should still start conversations.
-            </p>
-            <a className="text-link" href="mailto:info@vineyardsun.com">
-              Contact us <span>→</span>
-            </a>
-          </div>
-        </section>
 
         <section className="intro-section" id="story">
           <p className="eyebrow">The originals</p>
@@ -603,6 +602,34 @@ export function Storefront() {
               </a>
             </figcaption>
           </figure>
+        </section>
+
+        <section className="about-section" id="about">
+          <div className="about-image">
+            <img
+              src="/brand/founder.png"
+              alt="Vineyard Sun founder Joseph O'Bell in Napa Valley"
+            />
+            <span>Joseph O&apos;Bell · Founder</span>
+          </div>
+          <div className="about-copy">
+            <p className="eyebrow">About Vineyard Sun</p>
+            <h2>Born after a winery weekend near Austin.</h2>
+            <p>
+              Vineyard Sun is a lifestyle eyewear line for people who love wine
+              and vineyards. Founder Joseph O&apos;Bell had the idea after a winery
+              tour near Austin, Texas: cork sunglasses felt like the natural
+              companion to the experience.
+            </p>
+            <p>
+              After refining the designs, Vineyard Sun launched in spring 2017
+              with two original cork styles—Syrah and Cabernet Sauvignon—and a
+              belief that useful things should still start conversations.
+            </p>
+            <a className="text-link" href="mailto:info@vineyardsun.com">
+              Contact us <span>→</span>
+            </a>
+          </div>
         </section>
 
       </main>

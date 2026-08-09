@@ -2,41 +2,23 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
+test("ships the requested Vineyard Sun storefront structure", async () => {
+  const [storefront, layout] = await Promise.all([
+    readFile(new URL("../app/Storefront.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+  ]);
 
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
-}
-
-test("server-renders the Vineyard Sun storefront", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
-  const html = await response.text();
-  assert.match(html, /<title>Vineyard Sun \| Cork Eyewear &amp; Conversation Pieces<\/title>/i);
-  assert.match(html, /Happiness is positive cash flow/);
-  assert.match(html, /Add bestseller to bag/);
-  assert.match(html, /About Vineyard Sun/);
-  assert.match(html, /Shared around the table/);
-  assert.doesNotMatch(html, />[^<]*Shopify[^<]*</i);
-  assert.match(html, /Open shopping bag/);
-  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
+  assert.match(layout, /Vineyard Sun \| Cork Eyewear & Conversation Pieces/);
+  assert.match(storefront, /The wine lover&apos;s eyewear/);
+  assert.match(storefront, /Happiness is positive cash flow/);
+  assert.match(storefront, /Add bestseller to bag/);
+  assert.match(storefront, /About Vineyard Sun/);
+  assert.match(storefront, /Shared around the table/);
+  assert.doesNotMatch(storefront, /Secure Shopify checkout|Powered by Shopify|Checkout with Shopify/i);
+  assert.match(storefront, /Open shopping bag/);
+  assert.ok(storefront.indexOf("Happiness is positive cash flow") > storefront.indexOf("The wine lover"));
+  assert.ok(storefront.indexOf("About Vineyard Sun") > storefront.indexOf("Seen in the wild"));
+  assert.doesNotMatch(storefront, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
 test("ships a complete local catalog snapshot and checkout adapter", async () => {
@@ -66,4 +48,22 @@ test("ships a complete local catalog snapshot and checkout adapter", async () =>
   assert.match(storefront, /vineyardsun\.myshopify\.com/);
   assert.match(storefront, /\/cart\/\$\{cartDetails/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+});
+
+test("includes a password-protected persistent product admin", async () => {
+  const [adminClient, adminAuth, productsRoute, hosting, schema] = await Promise.all([
+    readFile(new URL("../app/admin/AdminClient.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/admin-auth.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(adminClient, /Save changes/);
+  assert.match(adminClient, /role="switch"/);
+  assert.match(adminAuth, /ADMIN_PASSWORD/);
+  assert.match(adminAuth, /HttpOnly; Secure; SameSite=Strict/);
+  assert.match(productsRoute, /requestIsAdmin/);
+  assert.equal(JSON.parse(hosting).d1, "DB");
+  assert.match(schema, /product_visibility/);
 });

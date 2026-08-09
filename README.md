@@ -6,18 +6,23 @@ the secure hosted checkout.
 
 ## Control which products appear
 
-Open `app/data/merchandising.json` in GitHub and use the pencil button to edit:
+Visit `/admin`, sign in with the password stored in the server-only
+`ADMIN_PASSWORD` environment variable, switch products between Visible and
+Hidden, and select **Save changes**. Product choices are stored in the site
+database and apply to every visitor.
 
-- `featuredProductHandle`: the product in the large opening feature.
-- `catalogProductHandles`: an exact allowlist. Leave it empty to show all products.
-- `hiddenProductHandles`: products to hide even if they are in the allowlist.
+`ADMIN_PASSWORD` must contain at least 12 characters. For local development,
+copy `.env.example` to `.env` and replace the example value. For the hosted
+site, set it as a secret environment variable in Sites and redeploy.
+
+The fallback file `app/data/merchandising.json` still controls the featured
+product and default catalog order:
+
+- `featuredProductHandle`: the product in the large product feature.
 - `priorityProductHandles`: products that appear first, in this exact order.
 
 Use the product handle from the product URL. For example, the embroidered pillow
 uses `premium-icahn-happiness-is-positive-cashflow-decorative-pillow`.
-
-After committing an edit, ask Codex to publish the Vineyard Sun merchandising
-change. The layout does not need to be edited.
 
 ## Refresh products and images
 

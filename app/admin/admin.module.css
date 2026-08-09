@@ -1,0 +1,365 @@
+.loading,
+.loginPage,
+.adminPage {
+  background: #f5f1e8;
+  color: #172231;
+  min-height: 100svh;
+}
+
+.loading {
+  align-items: center;
+  display: flex;
+  font-size: 0.8rem;
+  justify-content: center;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.loginPage {
+  display: grid;
+  padding: 34px clamp(22px, 5vw, 70px);
+}
+
+.wordmark {
+  color: #172231;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+}
+
+.wordmark span {
+  color: #8b303a;
+}
+
+.loginCard {
+  align-self: center;
+  background: white;
+  border: 1px solid #d9d1c3;
+  justify-self: center;
+  max-width: 480px;
+  padding: clamp(32px, 6vw, 62px);
+  width: 100%;
+}
+
+.eyebrow {
+  color: #8b303a;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin: 0 0 18px;
+  text-transform: uppercase;
+}
+
+.loginCard h1,
+.heading h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(2.6rem, 5vw, 4.8rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  margin: 0 0 20px;
+}
+
+.loginCard > p:not(.eyebrow):not(.error) {
+  color: #677069;
+  line-height: 1.65;
+  margin: 0 0 30px;
+}
+
+.loginCard label {
+  display: grid;
+  gap: 9px;
+}
+
+.loginCard label span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loginCard input,
+.toolbar input {
+  background: #fbfaf7;
+  border: 1px solid #cfc6b8;
+  border-radius: 0;
+  color: #172231;
+  font: inherit;
+  min-height: 52px;
+  outline: none;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.loginCard input:focus,
+.toolbar input:focus {
+  border-color: #8b303a;
+  box-shadow: 0 0 0 3px rgba(139, 48, 58, 0.12);
+}
+
+.loginCard > button,
+.saveButton {
+  background: #172231;
+  border: 0;
+  color: white;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  margin-top: 18px;
+  min-height: 52px;
+  padding: 0 24px;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.loginCard > button:disabled,
+.saveButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.backLink {
+  color: #677069;
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 24px;
+  text-align: center;
+}
+
+.notice,
+.error {
+  background: #f7e9dc;
+  border-left: 3px solid #b8663a;
+  color: #6d351e;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 18px 0 0;
+  padding: 13px 15px;
+}
+
+.adminHeader {
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid #d9d1c3;
+  display: flex;
+  justify-content: space-between;
+  min-height: 82px;
+  padding: 16px clamp(22px, 5vw, 70px);
+}
+
+.adminHeader > div:first-child {
+  align-items: baseline;
+  display: flex;
+  gap: 24px;
+}
+
+.adminHeader p {
+  color: #798078;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.headerActions {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+}
+
+.headerActions a,
+.headerActions button,
+.toolbar button {
+  background: none;
+  border: 0;
+  color: #172231;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.workspace {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: clamp(55px, 8vw, 100px) clamp(18px, 4vw, 48px) 100px;
+}
+
+.heading {
+  align-items: end;
+  display: flex;
+  gap: 30px;
+  justify-content: space-between;
+  margin-bottom: 46px;
+}
+
+.heading > div > p:last-child {
+  color: #6f766f;
+  margin: 0;
+}
+
+.saveButton {
+  flex: 0 0 190px;
+  margin: 0;
+  width: auto;
+}
+
+.toolbar {
+  align-items: center;
+  background: white;
+  border: 1px solid #d9d1c3;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.toolbar label {
+  max-width: 420px;
+  width: 100%;
+}
+
+.toolbar > div {
+  display: flex;
+  gap: 22px;
+  padding-right: 10px;
+}
+
+.productList {
+  background: white;
+  border: 1px solid #d9d1c3;
+  border-top: 0;
+}
+
+.productRow {
+  align-items: center;
+  border-bottom: 1px solid #e5ded2;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 74px minmax(0, 1fr) 48px 64px;
+  min-height: 104px;
+  padding: 14px 22px 14px 14px;
+}
+
+.productRow:last-child {
+  border-bottom: 0;
+}
+
+.productImage {
+  aspect-ratio: 1;
+  background: #eee9df;
+  overflow: hidden;
+}
+
+.productImage img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.productCopy h2 {
+  font-family: Georgia, serif;
+  font-size: 1.08rem;
+  font-weight: 500;
+  margin: 0 0 7px;
+}
+
+.productCopy p {
+  color: #7a8078;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.switch {
+  background: #bbb8b0;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 26px;
+  padding: 3px;
+  transition: background 160ms ease;
+  width: 46px;
+}
+
+.switch span {
+  background: white;
+  border-radius: 50%;
+  display: block;
+  height: 20px;
+  transition: transform 160ms ease;
+  width: 20px;
+}
+
+.switchOn {
+  background: #496e52;
+}
+
+.switchOn span {
+  transform: translateX(20px);
+}
+
+.visible,
+.hidden {
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.visible {
+  color: #496e52;
+}
+
+.hidden {
+  color: #8d8275;
+}
+
+.srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (max-width: 700px) {
+  .adminHeader > div:first-child p,
+  .headerActions a {
+    display: none;
+  }
+
+  .heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .saveButton {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar > div {
+    justify-content: space-between;
+    padding: 6px 4px;
+  }
+
+  .productRow {
+    gap: 13px;
+    grid-template-columns: 60px minmax(0, 1fr) 46px;
+    padding-right: 14px;
+  }
+
+  .productRow > strong {
+    display: none;
+  }
+
+  .productCopy p {
+    line-height: 1.4;
+  }
+}

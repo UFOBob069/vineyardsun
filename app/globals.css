@@ -201,26 +201,29 @@ img {
 }
 
 .hero-section {
-  background: #172231;
+  align-items: center;
+  background-image:
+    linear-gradient(90deg, rgba(17, 23, 15, 0.69) 0%, rgba(17, 23, 15, 0.37) 48%, rgba(17, 23, 15, 0.09) 100%),
+    url("/brand/hero.jpg");
+  background-position: center;
+  background-size: cover;
   color: white;
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
+  display: flex;
   min-height: calc(100svh - 78px);
-  overflow: hidden;
+  padding: clamp(70px, 10vw, 140px) clamp(22px, 8vw, 130px);
+  position: relative;
 }
 
 .hero-content {
-  align-self: center;
-  max-width: 760px;
-  padding: clamp(70px, 9vw, 140px) clamp(30px, 7vw, 110px);
+  max-width: 720px;
 }
 
 .hero-content h1 {
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(4rem, 7vw, 7.4rem);
+  font-size: clamp(4rem, 8vw, 8.4rem);
   font-weight: 500;
   letter-spacing: -0.055em;
-  line-height: 0.86;
+  line-height: 0.82;
   margin: 0 0 32px;
   max-width: 720px;
 }
@@ -233,32 +236,76 @@ img {
   max-width: 570px;
 }
 
-.hero-price {
+.hero-caption {
+  bottom: 34px;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  position: absolute;
+  right: clamp(22px, 4vw, 64px);
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+}
+
+.pillow-feature {
+  background: #172231;
+  color: white;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  min-height: 760px;
+  overflow: hidden;
+}
+
+.pillow-content {
+  align-self: center;
+  max-width: 760px;
+  padding: clamp(70px, 9vw, 140px) clamp(30px, 7vw, 110px);
+}
+
+.pillow-content h2 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(4rem, 7vw, 7.4rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.86;
+  margin: 0 0 32px;
+  max-width: 720px;
+}
+
+.pillow-copy {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(0.98rem, 1.4vw, 1.16rem);
+  line-height: 1.75;
+  margin: 0 0 38px;
+  max-width: 570px;
+}
+
+.pillow-price {
   align-items: baseline;
   display: flex;
   gap: 12px;
   margin: -12px 0 32px;
 }
 
-.hero-price strong {
+.pillow-price strong {
   font-family: var(--font-display), Georgia, serif;
   font-size: 2rem;
   font-weight: 600;
 }
 
-.hero-price span {
+.pillow-price span {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.9rem;
   text-decoration: line-through;
 }
 
-.hero-actions {
+.pillow-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-.hero-product {
+.pillow-product {
   background: #e8e0d2;
   border: 0;
   cursor: pointer;
@@ -268,18 +315,18 @@ img {
   position: relative;
 }
 
-.hero-product img {
+.pillow-product img {
   height: 100%;
   object-fit: cover;
   transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
   width: 100%;
 }
 
-.hero-product:hover img {
+.pillow-product:hover img {
   transform: scale(1.02);
 }
 
-.hero-product-badge {
+.pillow-product-badge {
   background: var(--wine);
   color: white;
   font-size: 0.64rem;
@@ -1372,21 +1419,21 @@ a.partner-card:hover {
     gap: 15px;
   }
 
-  .hero-section {
+  .pillow-feature {
     grid-template-columns: 1fr;
     min-height: 0;
   }
 
-  .hero-content {
+  .pillow-content {
     max-width: none;
     padding: 80px 25px 70px;
   }
 
-  .hero-content h1 {
+  .pillow-content h2 {
     font-size: clamp(3.8rem, 15vw, 6.5rem);
   }
 
-  .hero-product {
+  .pillow-product {
     aspect-ratio: 1.08;
     min-height: 0;
   }
@@ -1544,16 +1591,16 @@ a.partner-card:hover {
     font-size: 0.9rem;
   }
 
-  .hero-actions {
+  .pillow-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .hero-actions .button {
+  .pillow-actions .button {
     width: 100%;
   }
 
-  .hero-product-badge {
+  .pillow-product-badge {
     left: 14px;
     top: 14px;
   }
