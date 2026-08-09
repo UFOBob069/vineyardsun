@@ -8,6 +8,7 @@ import {
   type MouseEvent,
 } from "react";
 import catalogData from "./data/catalog.json";
+import merchandisingData from "./data/merchandising.json";
 
 type Variant = {
   id: number;
@@ -38,7 +39,74 @@ type CartLine = {
 
 type Filter = "all" | "eyewear" | "apparel" | "home";
 
-const products = catalogData as Product[];
+type MerchandisingConfig = {
+  featuredProductHandle: string;
+  catalogProductHandles: string[];
+  hiddenProductHandles: string[];
+  priorityProductHandles: string[];
+};
+
+const allProducts = catalogData as Product[];
+const merchandising = merchandisingData as MerchandisingConfig;
+const allowedHandles = new Set(merchandising.catalogProductHandles);
+const hiddenHandles = new Set(merchandising.hiddenProductHandles);
+const priorityByHandle = new Map(
+  merchandising.priorityProductHandles.map((handle, index) => [handle, index]),
+);
+const products = allProducts
+  .filter(
+    (product) =>
+      !hiddenHandles.has(product.handle) &&
+      (allowedHandles.size === 0 || allowedHandles.has(product.handle)),
+  )
+  .sort((first, second) => {
+    const firstPriority = priorityByHandle.get(first.handle) ?? Number.MAX_SAFE_INTEGER;
+    const secondPriority = priorityByHandle.get(second.handle) ?? Number.MAX_SAFE_INTEGER;
+    return firstPriority - secondPriority;
+  });
+const featuredProduct =
+  allProducts.find(
+    (product) => product.handle === merchandising.featuredProductHandle,
+  ) ?? products[0];
+
+const partners = [
+  {
+    name: "Northstar Winery",
+    location: "Walla Walla, Washington",
+    image: "/brand/partner-northstar.png",
+    href: "https://www.northstarwinery.com/",
+  },
+  {
+    name: "Mercer Wine Estates",
+    location: "Washington State",
+    image: "/brand/partner-mercer.jpg",
+    href: "https://mercerwine.com/",
+  },
+  {
+    name: "Eternal Wine",
+    location: "Walla Walla Valley",
+    image: "/brand/partner-eternal.jpg",
+    href: "https://eternalwine.com/",
+  },
+  {
+    name: "BND Wines",
+    location: "Oakville, Ontario",
+    image: "/brand/partner-bnd.jpg",
+    href: "https://www.bndwines.com/",
+  },
+  {
+    name: "Wine LA",
+    location: "Los Angeles, California",
+    image: "/brand/partner-winela.png",
+    href: "https://learnaboutwine.com/",
+  },
+  {
+    name: "Helotes Creek Winery",
+    location: "Helotes, Texas",
+    image: "/brand/partner-helotes.jpg",
+    href: null,
+  },
+] as const;
 const SHOPIFY_DOMAIN = "vineyardsun.myshopify.com";
 const CART_STORAGE_KEY = "vineyard-sun-cart-v1";
 
@@ -124,7 +192,7 @@ export function Storefront() {
 
   const cartDetails = cart
     .map((line) => {
-      const product = products.find((item) => item.id === line.productId);
+      const product = allProducts.find((item) => item.id === line.productId);
       const variant = product?.variants.find(
         (item) => item.id === line.variantId,
       );
@@ -190,9 +258,9 @@ export function Storefront() {
         </a>
 
         <nav className={menuOpen ? "main-nav is-open" : "main-nav"}>
-          <a href="#top" onClick={closeMenu}>Home</a>
-          <a href="#catalog" onClick={closeMenu}>Catalog</a>
-          <a href="#story" onClick={closeMenu}>Our story</a>
+          <a href="#catalog" onClick={closeMenu}>Shop</a>
+          <a href="#about" onClick={closeMenu}>About</a>
+          <a href="#partners" onClick={closeMenu}>Partners</a>
           <a href="#reviews" onClick={closeMenu}>Reviews</a>
         </nav>
 
@@ -226,25 +294,90 @@ export function Storefront() {
       </header>
 
       <main id="top">
-        <section className="hero-section" aria-labelledby="hero-title">
-          <div className="hero-content">
-            <p className="eyebrow light">Made for the golden hour</p>
-            <h1 id="hero-title">The wine lover&apos;s eyewear.</h1>
-            <p className="hero-copy">
-              Cork-framed originals, sunny-day essentials, and a side collection
-              for people who appreciate a good story.
-            </p>
-            <a className="button button-light" href="#catalog">
-              Shop the collection
-            </a>
-          </div>
-          <div className="hero-caption">Vineyard Sun · California</div>
-        </section>
+        {featuredProduct && (
+          <section className="hero-section" aria-labelledby="hero-title">
+            <div className="hero-content">
+              <p className="eyebrow light">Bestseller · embroidered</p>
+              <h1 id="hero-title">Happiness is positive cash flow.</h1>
+              <p className="hero-copy">
+                Our signature navy pillow brings a little optimism to the office,
+                study, or trading desk—with the reminder stitched right in.
+              </p>
+              <div className="hero-price">
+                <strong>{money(startingPrice(featuredProduct))}</strong>
+                {featuredProduct.variants[0]?.compareAtPrice && (
+                  <span>{money(featuredProduct.variants[0].compareAtPrice)}</span>
+                )}
+              </div>
+              <div className="hero-actions">
+                <button
+                  className="button button-light"
+                  type="button"
+                  onClick={() => {
+                    const variant = featuredProduct.variants.find(
+                      (item) => item.available,
+                    );
+                    if (variant) addToCart(featuredProduct, variant);
+                  }}
+                >
+                  Add bestseller to bag
+                </button>
+                <button
+                  className="button button-outline-light"
+                  type="button"
+                  onClick={() => setSelectedProduct(featuredProduct)}
+                >
+                  Product details
+                </button>
+              </div>
+            </div>
+            <button
+              className="hero-product"
+              type="button"
+              onClick={() => setSelectedProduct(featuredProduct)}
+              aria-label={`View ${featuredProduct.title}`}
+            >
+              <span className="hero-product-badge">No. 1 bestseller</span>
+              <img
+                src="/brand/cash-flow-pillow.jpg"
+                alt="Navy Happiness is Positive Cash Flow embroidered pillow"
+              />
+            </button>
+          </section>
+        )}
 
         <section className="service-strip" aria-label="Store benefits">
           <p><span>01</span> Independent since 2017</p>
-          <p><span>02</span> UV400 eyewear</p>
-          <p><span>03</span> Secure Shopify checkout</p>
+          <p><span>02</span> Small-batch favorites</p>
+          <p><span>03</span> Secure checkout</p>
+        </section>
+
+        <section className="about-section" id="about">
+          <div className="about-image">
+            <img
+              src="/brand/founder.png"
+              alt="Vineyard Sun founder Joseph O'Bell in Napa Valley"
+            />
+            <span>Joseph O&apos;Bell · Founder</span>
+          </div>
+          <div className="about-copy">
+            <p className="eyebrow">About Vineyard Sun</p>
+            <h2>Born after a winery weekend near Austin.</h2>
+            <p>
+              Vineyard Sun is a lifestyle eyewear line for people who love wine
+              and vineyards. Founder Joseph O&apos;Bell had the idea after a winery
+              tour near Austin, Texas: cork sunglasses felt like the natural
+              companion to the experience.
+            </p>
+            <p>
+              After refining the designs, Vineyard Sun launched in spring 2017
+              with two original cork styles—Syrah and Cabernet Sauvignon—and a
+              belief that useful things should still start conversations.
+            </p>
+            <a className="text-link" href="mailto:info@vineyardsun.com">
+              Contact us <span>→</span>
+            </a>
+          </div>
         </section>
 
         <section className="intro-section" id="story">
@@ -387,36 +520,67 @@ export function Storefront() {
           )}
         </section>
 
-        <section className="spotlight-section">
-          <div className="spotlight-image">
-            <img
-              src="/brand/cash-flow-pillow.jpg"
-              alt="Navy Positive Cash Flow embroidered pillow"
-            />
-          </div>
-          <div className="spotlight-copy">
-            <p className="eyebrow light">From our studio</p>
-            <h2>Happiness is positive cash flow.</h2>
+        <section className="partners-section" id="partners">
+          <div className="partners-heading">
+            <div>
+              <p className="eyebrow">Stockists & collaborators</p>
+              <h2>Shared around the table.</h2>
+            </div>
             <p>
-              The embroidered navy pillow that makes a desk, den, or trading room
-              feel a little more optimistic.
+              Vineyard Sun has traveled through tasting rooms, wine communities,
+              and collaborations from Texas and Washington to Ontario and France.
             </p>
-            <button
-              className="button button-light"
-              type="button"
-              onClick={() =>
-                setSelectedProduct(
-                  products.find(
-                    (product) =>
-                      product.handle ===
-                      "premium-icahn-happiness-is-positive-cashflow-decorative-pillow",
-                  ) ?? null,
-                )
-              }
-            >
-              View the pillow
-            </button>
           </div>
+
+          <div className="partner-grid">
+            {partners.map((partner) => {
+              const content = (
+                <>
+                  <div className="partner-logo">
+                    <img src={partner.image} alt={`${partner.name} logo`} />
+                  </div>
+                  <div className="partner-meta">
+                    <h3>{partner.name}</h3>
+                    <p>
+                      {partner.location}
+                      {partner.href && <span>↗</span>}
+                    </p>
+                  </div>
+                </>
+              );
+
+              return partner.href ? (
+                <a
+                  className="partner-card"
+                  href={partner.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  key={partner.name}
+                >
+                  {content}
+                </a>
+              ) : (
+                <article className="partner-card" key={partner.name}>
+                  {content}
+                </article>
+              );
+            })}
+          </div>
+
+          <article className="partner-story">
+            <img
+              src="/brand/partner-sommeliers.jpg"
+              alt="Alaric de Portal, Christian Martray, and Oliver Poussier wearing Vineyard Sun sunglasses"
+            />
+            <div>
+              <p className="eyebrow light">Vineyard Sun in France</p>
+              <h3>A well-traveled pair of shades.</h3>
+              <p>
+                Alaric de Portal, sommelier Christian Martray, and Oliver Poussier,
+                World&apos;s Best Sommelier 2000, sporting Vineyard Sun in France.
+              </p>
+            </div>
+          </article>
         </section>
 
         <section className="reviews-section" id="reviews">
@@ -441,10 +605,6 @@ export function Storefront() {
           </figure>
         </section>
 
-        <section className="partners-section">
-          <p>Partners & past collaborations</p>
-          <img src="/brand/partners.png" alt="Vineyard Sun partner logos" />
-        </section>
       </main>
 
       <footer className="site-footer">
@@ -458,7 +618,8 @@ export function Storefront() {
           <div>
             <h3>Explore</h3>
             <a href="#catalog">Catalog</a>
-            <a href="#story">Our story</a>
+            <a href="#about">About us</a>
+            <a href="#partners">Partners</a>
             <a href="#reviews">Reviews</a>
           </div>
           <div>
@@ -474,7 +635,7 @@ export function Storefront() {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Vineyard Sun</span>
-          <span>Secure checkout powered by Shopify</span>
+          <a href="mailto:info@vineyardsun.com">info@vineyardsun.com</a>
         </div>
       </footer>
 
@@ -721,7 +882,7 @@ function CartDrawer({
               </div>
               <p>Shipping and taxes are calculated securely at checkout.</p>
               <a className="button button-dark button-wide" href={checkoutUrl}>
-                Continue to Shopify checkout
+                Continue to secure checkout
               </a>
               <span className="checkout-note">Cards · Apple Pay · Google Pay · Shop Pay</span>
             </div>

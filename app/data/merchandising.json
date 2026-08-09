@@ -1,0 +1,13 @@
+{
+  "_instructions": "Edit this file to control the storefront. featuredProductHandle controls the large opening feature. Add handles to catalogProductHandles to show only those products (leave empty to show all). hiddenProductHandles always hides products. priorityProductHandles controls the first products in the catalog; everything else follows.",
+  "featuredProductHandle": "premium-icahn-happiness-is-positive-cashflow-decorative-pillow",
+  "catalogProductHandles": [],
+  "hiddenProductHandles": [],
+  "priorityProductHandles": [
+    "premium-icahn-happiness-is-positive-cashflow-decorative-pillow",
+    "syrah-cork-sunglasses",
+    "satoshi",
+    "el-zone",
+    "it-s-always-sunny-in-space-minimal-logo-tee"
+  ]
+}

@@ -116,6 +116,46 @@ const brandAssets = [
     width: 1100,
     url: "https://vineyardsun.com/cdn/shop/files/PXL_20240904_204448008_2_530x@2x.jpg?v=1725483227",
   },
+  {
+    name: "founder.png",
+    width: 1200,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Joey.PNG?v=1491871532",
+  },
+  {
+    name: "partner-northstar.png",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/NorthStar.PNG?v=1498744827",
+  },
+  {
+    name: "partner-mercer.jpg",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Mercer_Winer_compact.JPG?v=1505765919",
+  },
+  {
+    name: "partner-eternal.jpg",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Eternal_Wines_compact.JPG?v=1505765895",
+  },
+  {
+    name: "partner-bnd.jpg",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/brandnewdaylogo_medium.JPG?v=1519702082",
+  },
+  {
+    name: "partner-winela.png",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Wine_LA_compact.png?v=1519702309",
+  },
+  {
+    name: "partner-sommeliers.jpg",
+    width: 1100,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Oliver_Poussier_medium.JPG?v=1519702474",
+  },
+  {
+    name: "partner-helotes.jpg",
+    width: 700,
+    url: "https://cdn.shopify.com/s/files/1/1904/4399/files/Helotes_Creek_Winery_medium.jpg?v=1519702556",
+  },
 ];
 
 for (const asset of brandAssets) {

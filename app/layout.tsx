@@ -17,7 +17,7 @@ const sans = Work_Sans({
 
 const title = "Vineyard Sun | Cork Eyewear & Conversation Pieces";
 const description =
-  "Wine-country cork sunglasses, small-batch goods, and made-to-order conversation pieces from Vineyard Sun.";
+  "Shop Vineyard Sun's bestselling embroidered Positive Cash Flow pillow, wine-country cork sunglasses, and made-to-order conversation pieces.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: socialImage,
           width: 1200,
           height: 630,
-          alt: "Vineyard Sun cork sunglasses at golden hour",
+          alt: "Vineyard Sun Positive Cash Flow embroidered pillow",
         },
       ],
     },

@@ -30,17 +30,20 @@ test("server-renders the Vineyard Sun storefront", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Vineyard Sun \| Cork Eyewear &amp; Conversation Pieces<\/title>/i);
-  assert.match(html, /The wine lover/);
-  assert.match(html, /Shop the collection/);
-  assert.match(html, /Secure Shopify checkout/);
+  assert.match(html, /Happiness is positive cash flow/);
+  assert.match(html, /Add bestseller to bag/);
+  assert.match(html, /About Vineyard Sun/);
+  assert.match(html, /Shared around the table/);
+  assert.doesNotMatch(html, />[^<]*Shopify[^<]*</i);
   assert.match(html, /Open shopping bag/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
 test("ships a complete local catalog snapshot and checkout adapter", async () => {
-  const [catalogText, storefront, packageJson, productImages, brandImages] =
+  const [catalogText, merchandisingText, storefront, packageJson, productImages, brandImages] =
     await Promise.all([
       readFile(new URL("../app/data/catalog.json", import.meta.url), "utf8"),
+      readFile(new URL("../app/data/merchandising.json", import.meta.url), "utf8"),
       readFile(new URL("../app/Storefront.tsx", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
       readdir(new URL("../public/products/", import.meta.url)),
@@ -48,10 +51,16 @@ test("ships a complete local catalog snapshot and checkout adapter", async () =>
     ]);
 
   const catalog = JSON.parse(catalogText);
+  const merchandising = JSON.parse(merchandisingText);
   assert.equal(catalog.length, 25);
   assert.equal(productImages.length, 25);
   assert.ok(brandImages.includes("hero.jpg"));
   assert.ok(brandImages.includes("partners.png"));
+  assert.ok(brandImages.includes("founder.png"));
+  assert.equal(
+    merchandising.featuredProductHandle,
+    "premium-icahn-happiness-is-positive-cashflow-decorative-pillow",
+  );
   assert.ok(catalog.some((product) => product.fulfillment === "printful"));
   assert.ok(catalog.some((product) => product.fulfillment === "local"));
   assert.match(storefront, /vineyardsun\.myshopify\.com/);
