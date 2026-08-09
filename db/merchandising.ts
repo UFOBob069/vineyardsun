@@ -1,41 +1,56 @@
-import { eq } from "drizzle-orm";
-import { env } from "cloudflare:workers";
 import fallbackConfig from "../app/data/merchandising.json";
 import { getDb } from ".";
-import { productVisibility } from "./schema";
 
-type RuntimeEnv = {
-  DB?: D1Database;
-};
+let schemaReady: Promise<unknown> | undefined;
+
+async function ensureSchema() {
+  const sql = getDb();
+
+  schemaReady ??= Promise.resolve(sql`
+    CREATE TABLE IF NOT EXISTS merchandising_settings (
+      id TEXT PRIMARY KEY,
+      hidden_handles JSONB NOT NULL DEFAULT '[]'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `).catch((error) => {
+    schemaReady = undefined;
+    throw error;
+  });
+
+  await schemaReady;
+}
 
 export async function getHiddenProductHandles(): Promise<string[]> {
   try {
-    const rows = await getDb()
-      .select({ handle: productVisibility.handle })
-      .from(productVisibility)
-      .where(eq(productVisibility.visible, false));
-    return rows.map((row) => row.handle);
+    const sql = getDb();
+    await ensureSchema();
+    const rows = (await sql`
+      SELECT hidden_handles
+      FROM merchandising_settings
+      WHERE id = 'storefront'
+      LIMIT 1
+    `) as Array<{ hidden_handles: unknown }>;
+    const handles = rows[0]?.hidden_handles;
+
+    return Array.isArray(handles)
+      ? handles.filter((handle): handle is string => typeof handle === "string")
+      : fallbackConfig.hiddenProductHandles;
   } catch {
     return fallbackConfig.hiddenProductHandles;
   }
 }
 
 export async function replaceHiddenProductHandles(handles: string[]) {
-  const database = (env as unknown as RuntimeEnv).DB;
-  if (!database) throw new Error("Product storage is unavailable.");
-
+  const sql = getDb();
+  await ensureSchema();
   const uniqueHandles = [...new Set(handles.map((handle) => handle.trim()).filter(Boolean))];
-  const statements = [database.prepare("DELETE FROM product_visibility")];
+  const json = JSON.stringify(uniqueHandles);
 
-  for (const handle of uniqueHandles) {
-    statements.push(
-      database
-        .prepare(
-          "INSERT INTO product_visibility (handle, visible, updated_at) VALUES (?, 0, CURRENT_TIMESTAMP)",
-        )
-        .bind(handle),
-    );
-  }
-
-  await database.batch(statements);
+  await sql`
+    INSERT INTO merchandising_settings (id, hidden_handles, updated_at)
+    VALUES ('storefront', ${json}::jsonb, NOW())
+    ON CONFLICT (id) DO UPDATE
+    SET hidden_handles = EXCLUDED.hidden_handles,
+        updated_at = NOW()
+  `;
 }

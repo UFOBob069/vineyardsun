@@ -54,12 +54,14 @@ test("ships a complete local catalog snapshot and checkout adapter", async () =>
 });
 
 test("includes a password-protected persistent product admin", async () => {
-  const [adminClient, adminAuth, productsRoute, hosting, schema] = await Promise.all([
+  const [adminClient, adminAuth, productsRoute, database, merchandising, environment] =
+    await Promise.all([
     readFile(new URL("../app/admin/AdminClient.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/admin-auth.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/products/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
-    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/merchandising.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
   ]);
 
   assert.match(adminClient, /Save changes/);
@@ -67,6 +69,8 @@ test("includes a password-protected persistent product admin", async () => {
   assert.match(adminAuth, /ADMIN_PASSWORD/);
   assert.match(adminAuth, /HttpOnly; Secure; SameSite=Strict/);
   assert.match(productsRoute, /requestIsAdmin/);
-  assert.equal(JSON.parse(hosting).d1, "DB");
-  assert.match(schema, /product_visibility/);
+  assert.match(database, /@neondatabase\/serverless/);
+  assert.match(database, /DATABASE_URL/);
+  assert.match(merchandising, /merchandising_settings/);
+  assert.match(environment, /DATABASE_URL=postgresql:/);
 });

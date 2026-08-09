@@ -1,14 +1,8 @@
-import { env } from "cloudflare:workers";
-
 const COOKIE_NAME = "vineyard_sun_admin";
 const SESSION_LENGTH_SECONDS = 60 * 60 * 12;
 
-type RuntimeEnv = {
-  ADMIN_PASSWORD?: string;
-};
-
 function configuredPassword() {
-  return (env as unknown as RuntimeEnv).ADMIN_PASSWORD?.trim() ?? "";
+  return process.env.ADMIN_PASSWORD?.trim() ?? "";
 }
 
 function toHex(bytes: ArrayBuffer) {
