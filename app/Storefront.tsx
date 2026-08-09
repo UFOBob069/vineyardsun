@@ -330,7 +330,7 @@ export function Storefront({
         <section className="service-strip" aria-label="Store benefits">
           <p><span>01</span> Independent since 2017</p>
           <p><span>02</span> Small-batch favorites</p>
-          <p><span>03</span> Secure checkout</p>
+          <p><span>03</span> Wine-country originals</p>
         </section>
 
         {featuredProduct && (
@@ -580,25 +580,70 @@ export function Storefront({
         </section>
 
         <section className="reviews-section" id="reviews">
-          <div className="review-label">
-            <p className="eyebrow">Seen in the wild</p>
-            <h2>Conversation starters, confirmed.</h2>
+          <div className="reviews-heading">
+            <div>
+              <p className="eyebrow">What reviewers noticed</p>
+              <h2>Lightweight. Durable. Hard to ignore.</h2>
+            </div>
+            <p>
+              Published feedback from people who wore Vineyard Sun beyond the
+              tasting room.
+            </p>
           </div>
-          <figure className="review-quote">
-            <blockquote>
-              “Well constructed, functional, certainly a conversation-starter,
-              and seems more durable than you might first think.”
-            </blockquote>
-            <figcaption>
+
+          <div className="testimonial-grid">
+            <figure className="testimonial-card">
+              <span className="testimonial-number">01 / Construction</span>
+              <blockquote>
+                “Well constructed, functional, certainly a conversation-starter,
+                and seems more durable than you might first think.”
+              </blockquote>
+              <figcaption>
+                <span>1WineDude.com</span>
+                <a
+                  href="https://www.1winedude.com/the-shady-the-free-and-the-godforsaken-may-2018-wine-product-roundup/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Read review ↗
+                </a>
+              </figcaption>
+            </figure>
+
+            <figure className="testimonial-card">
+              <span className="testimonial-number">02 / Everyday wear</span>
+              <blockquote>
+                “I have worn these non-stop since they arrived.”
+              </blockquote>
+              <figcaption>
+                <span>Texas Wine Lover</span>
+                <a
+                  href="https://txwinelover.com/2019/01/vineyard-sun-sunglasses-the-wine-lovers-eyewear/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Read review ↗
+                </a>
+              </figcaption>
+            </figure>
+
+            <figure className="testimonial-card">
+              <span className="testimonial-number">03 / Lightweight feel</span>
+              <blockquote>
+                “The frame material is extraordinarily lightweight.”
+              </blockquote>
+              <figcaption>
+                <span>Texas Wine Lover</span>
               <a
-                href="http://www.1winedude.com/the-shady-the-free-and-the-godforsaken-may-2018-wine-product-roundup/"
+                href="https://txwinelover.com/2019/01/vineyard-sun-sunglasses-the-wine-lovers-eyewear/"
                 target="_blank"
                 rel="noreferrer"
               >
-                1WineDude.com review ↗
+                  Read review ↗
               </a>
-            </figcaption>
-          </figure>
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <section className="about-section" id="about">

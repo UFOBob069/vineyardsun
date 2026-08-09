@@ -14,6 +14,9 @@ test("ships the requested Vineyard Sun storefront structure", async () => {
   assert.match(storefront, /Add bestseller to bag/);
   assert.match(storefront, /About Vineyard Sun/);
   assert.match(storefront, /Shared around the table/);
+  assert.match(storefront, /Wine-country originals/);
+  assert.match(storefront, /I have worn these non-stop since they arrived/);
+  assert.match(storefront, /The frame material is extraordinarily lightweight/);
   assert.doesNotMatch(storefront, /Secure Shopify checkout|Powered by Shopify|Checkout with Shopify/i);
   assert.match(storefront, /Open shopping bag/);
   assert.ok(storefront.indexOf("Happiness is positive cash flow") > storefront.indexOf("The wine lover"));
