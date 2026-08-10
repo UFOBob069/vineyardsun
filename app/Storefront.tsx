@@ -89,7 +89,6 @@ const partners = [
     href: null,
   },
 ] as const;
-const SHOPIFY_DOMAIN = "vineyardsun.myshopify.com";
 const CART_STORAGE_KEY = "vineyard-sun-cart-v1";
 
 function money(value: number) {
@@ -132,6 +131,8 @@ export function Storefront({
   const [menuOpen, setMenuOpen] = useState(false);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartReady, setCartReady] = useState(false);
+  const [checkoutPending, setCheckoutPending] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const products = useMemo(() => {
     const allowedHandles = new Set(merchandising.catalogProductHandles);
@@ -272,11 +273,35 @@ export function Storefront({
     );
   };
 
-  const checkoutUrl = cartDetails.length
-    ? `https://${SHOPIFY_DOMAIN}/cart/${cartDetails
-        .map((line) => `${line.variant.id}:${line.quantity}`)
-        .join(",")}?ref=vineyard-sun-rebuild`
-    : "#";
+  const startCheckout = async () => {
+    if (!cartDetails.length || checkoutPending) return;
+    setCheckoutPending(true);
+    setCheckoutError("");
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lines: cartDetails.map((line) => ({
+            productId: line.productId,
+            variantId: line.variantId,
+            quantity: line.quantity,
+          })),
+        }),
+      });
+      const result = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !result.url) {
+        throw new Error(result.error || "Checkout could not start.");
+      }
+      window.location.assign(result.url);
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error ? error.message : "Checkout could not start.",
+      );
+      setCheckoutPending(false);
+    }
+  };
 
   const focusCatalog = () => {
     document.querySelector("#catalog")?.scrollIntoView({ behavior: "smooth" });
@@ -738,7 +763,9 @@ export function Storefront({
         <CartDrawer
           lines={cartDetails}
           total={cartTotal}
-          checkoutUrl={checkoutUrl}
+          checkoutPending={checkoutPending}
+          checkoutError={checkoutError}
+          onCheckout={startCheckout}
           onClose={() => setCartOpen(false)}
           onUpdate={updateQuantity}
         />
@@ -909,13 +936,17 @@ function ProductDialog({
 function CartDrawer({
   lines,
   total,
-  checkoutUrl,
+  checkoutPending,
+  checkoutError,
+  onCheckout,
   onClose,
   onUpdate,
 }: {
   lines: Array<CartLine & { product: Product; variant: Variant }>;
   total: number;
-  checkoutUrl: string;
+  checkoutPending: boolean;
+  checkoutError: string;
+  onCheckout: () => void;
   onClose: () => void;
   onUpdate: (variantId: number, quantity: number) => void;
 }) {
@@ -985,11 +1016,19 @@ function CartDrawer({
                 <span>Subtotal</span>
                 <strong>{money(total)}</strong>
               </div>
-              <p>Shipping and taxes are calculated securely at checkout.</p>
-              <a className="button button-dark button-wide" href={checkoutUrl}>
-                Continue to secure checkout
-              </a>
-              <span className="checkout-note">Cards · Apple Pay · Google Pay · Shop Pay</span>
+              <p>Shipping is shown before you pay.</p>
+              <button
+                className="button button-dark button-wide"
+                type="button"
+                disabled={checkoutPending}
+                onClick={onCheckout}
+              >
+                {checkoutPending ? "Opening checkout…" : "Continue to checkout"}
+              </button>
+              {checkoutError && (
+                <p className="checkout-error" role="alert">{checkoutError}</p>
+              )}
+              <span className="checkout-note">Cards · Apple Pay · Google Pay</span>
             </div>
           </>
         ) : (

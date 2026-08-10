@@ -24,12 +24,16 @@ test("ships the requested Vineyard Sun storefront structure", async () => {
   assert.doesNotMatch(storefront, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("ships a complete local catalog snapshot and checkout adapter", async () => {
-  const [catalogText, merchandisingText, storefront, packageJson, productImages, brandImages] =
+test("ships a complete local catalog snapshot and Stripe checkout adapter", async () => {
+  const [catalogText, merchandisingText, storefront, checkout, webhook, printful, orders, packageJson, productImages, brandImages] =
     await Promise.all([
       readFile(new URL("../app/data/catalog.json", import.meta.url), "utf8"),
       readFile(new URL("../app/data/merchandising.json", import.meta.url), "utf8"),
       readFile(new URL("../app/Storefront.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/checkout/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/printful.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/orders.ts", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
       readdir(new URL("../public/products/", import.meta.url)),
       readdir(new URL("../public/brand/", import.meta.url)),
@@ -48,8 +52,18 @@ test("ships a complete local catalog snapshot and checkout adapter", async () =>
   );
   assert.ok(catalog.some((product) => product.fulfillment === "printful"));
   assert.ok(catalog.some((product) => product.fulfillment === "local"));
-  assert.match(storefront, /vineyardsun\.myshopify\.com/);
-  assert.match(storefront, /\/cart\/\$\{cartDetails/);
+  assert.doesNotMatch(storefront, /vineyardsun\.myshopify\.com/);
+  assert.match(storefront, /fetch\("\/api\/checkout"/);
+  assert.match(checkout, /checkout\.sessions\.create/);
+  assert.match(checkout, /findCatalogVariant/);
+  assert.match(webhook, /constructEvent/);
+  assert.match(webhook, /request\.text\(\)/);
+  assert.match(webhook, /PRINTFUL_ALLOW_TEST_ORDERS/);
+  assert.match(printful, /external_variant_id/);
+  assert.match(printful, /confirm=1&update_existing=true/);
+  assert.match(orders, /storefront_orders/);
+  assert.match(orders, /stripe_session_id TEXT UNIQUE/);
+  assert.match(packageJson, /"stripe"/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
 

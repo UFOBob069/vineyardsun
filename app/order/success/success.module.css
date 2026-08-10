@@ -1,0 +1,89 @@
+.page {
+  align-items: center;
+  background:
+    linear-gradient(rgba(22, 40, 31, 0.38), rgba(22, 40, 31, 0.58)),
+    url("/brand/hero.jpg") center / cover;
+  display: flex;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.card {
+  background: #f5f0e7;
+  box-shadow: 0 24px 80px rgba(7, 18, 12, 0.28);
+  margin: auto;
+  max-width: 620px;
+  padding: clamp(38px, 7vw, 76px);
+  text-align: center;
+  width: 100%;
+}
+
+.wordmark {
+  color: #1f3228;
+  display: inline-block;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  margin-bottom: 56px;
+  text-decoration: none;
+}
+
+.wordmark span {
+  font-weight: 400;
+}
+
+.eyebrow {
+  color: #6e755f;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  color: #1f3228;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 400;
+  line-height: 0.95;
+  margin: 0 0 28px;
+}
+
+.copy {
+  color: #555f54;
+  line-height: 1.75;
+  margin: 0 auto;
+  max-width: 440px;
+}
+
+.order {
+  color: #1f3228;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 28px 0 0;
+  text-transform: uppercase;
+}
+
+.testNote {
+  background: #fff4cf;
+  color: #665011;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  margin: 28px 0 0;
+  padding: 14px 16px;
+}
+
+.button {
+  background: #1f3228;
+  color: white;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-top: 36px;
+  padding: 17px 24px;
+  text-decoration: none;
+  text-transform: uppercase;
+}

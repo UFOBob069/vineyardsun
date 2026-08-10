@@ -1414,6 +1414,13 @@ a.partner-card:hover {
   text-transform: uppercase;
 }
 
+.checkout-error {
+  color: #9b2c2c !important;
+  font-size: 0.72rem !important;
+  margin: 12px 0 0 !important;
+  text-align: center;
+}
+
 .empty-cart {
   align-items: center;
   display: flex;
