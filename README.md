@@ -24,10 +24,26 @@ product and default catalog order:
 Use the product handle from the product URL. For example, the embroidered pillow
 uses `premium-icahn-happiness-is-positive-cashflow-decorative-pillow`.
 
-## Refresh products and images
+## Product catalogs and images
 
 Run `npm run snapshot:shopify` to refresh the public catalog snapshot, then run
 `npm run build` to validate the storefront.
+
+Legacy products remain in the local catalog and keep their existing
+Shopify-linked Printful variant IDs. New products live only in the Manual/API
+store named **David's Store** (`18593823`). In `/admin`, select **Sync David's
+Store** after adding or changing a product in Printful. The sync:
+
+- reads only store `18593823` and never writes to any Printful product store;
+- imports Printful product names, variants, retail prices, availability, and
+  preview images into `printful_synced_products` in Neon;
+- adds new products as Hidden so they cannot be purchased before review;
+- preserves Vineyard Sun titles, descriptions, categories, custom images,
+  visibility, and price overrides on later syncs.
+
+Open an imported product in `/admin` to complete its storefront description,
+choose its image and prices, switch it to Visible, and save. A removed Printful
+product is deactivated on the next sync instead of being deleted from Neon.
 
 ## Stripe checkout and Printful fulfillment
 
@@ -38,10 +54,10 @@ Session. This prevents a buyer from changing a price in the browser.
 
 Stripe sends paid sessions to `POST /api/stripe/webhook`. The route verifies the
 raw request using `STRIPE_WEBHOOK_SECRET`, records the payment, and submits only
-the `printful` lines to Printful with `confirm=1`. Printful receives the existing
-Shopify variant ID as `external_variant_id`, preserving the designs already
-configured in the Vineyard Sun Printful store. Locally stocked lines remain
-marked for manual shipping.
+the `printful` lines to Printful with `confirm=1`. Legacy products use their existing
+Shopify `external_variant_id`; products imported from David's Store use their
+native `sync_variant_id`. A mixed cart is split into one idempotent Printful
+order per store. Locally stocked lines remain marked for manual shipping.
 
 Required Stripe webhook events:
 

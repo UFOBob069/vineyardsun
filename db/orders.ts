@@ -10,6 +10,15 @@ export type OrderLine = {
   unitAmountCents: number;
   fulfillment: "local" | "printful";
   sku: string | null;
+  printfulStoreId?: string;
+  printfulVariantId?: string;
+  printfulVariantReference?: "external" | "sync";
+};
+
+export type PrintfulOrderRecord = {
+  storeId: string;
+  orderId: string;
+  status: string;
 };
 
 export type StorefrontOrder = {
@@ -27,6 +36,7 @@ export type StorefrontOrder = {
   shippingAddress: unknown;
   printfulOrderId: string | null;
   printfulStatus: string | null;
+  printfulOrders: PrintfulOrderRecord[];
   lastError: string | null;
 };
 
@@ -45,6 +55,7 @@ type OrderRow = {
   shipping_address: unknown;
   printful_order_id: string | null;
   printful_status: string | null;
+  printful_orders: unknown;
   last_error: string | null;
 };
 
@@ -71,6 +82,7 @@ async function ensureSchema() {
         shipping_address JSONB,
         printful_order_id TEXT,
         printful_status TEXT,
+        printful_orders JSONB NOT NULL DEFAULT '[]'::jsonb,
         last_error TEXT,
         processing_started_at TIMESTAMPTZ,
         paid_at TIMESTAMPTZ,
@@ -81,6 +93,10 @@ async function ensureSchema() {
     await sql`
       CREATE INDEX IF NOT EXISTS storefront_orders_created_at_idx
       ON storefront_orders (created_at DESC)
+    `;
+    await sql`
+      ALTER TABLE storefront_orders
+      ADD COLUMN IF NOT EXISTS printful_orders JSONB NOT NULL DEFAULT '[]'::jsonb
     `;
   })().catch((error) => {
     schemaReady = undefined;
@@ -106,6 +122,9 @@ function mapOrder(row: OrderRow): StorefrontOrder {
     shippingAddress: row.shipping_address,
     printfulOrderId: row.printful_order_id,
     printfulStatus: row.printful_status,
+    printfulOrders: Array.isArray(row.printful_orders)
+      ? (row.printful_orders as PrintfulOrderRecord[])
+      : [],
     lastError: row.last_error,
   };
 }
@@ -227,13 +246,11 @@ export async function claimOrderForFulfillment(orderId: string) {
 
 export async function markPrintfulSubmitted({
   orderId,
-  printfulOrderId,
-  printfulStatus,
+  printfulOrders,
   hasLocalItems,
 }: {
   orderId: string;
-  printfulOrderId: string;
-  printfulStatus: string;
+  printfulOrders: PrintfulOrderRecord[];
   hasLocalItems: boolean;
 }) {
   const sql = getDb();
@@ -241,11 +258,14 @@ export async function markPrintfulSubmitted({
   const fulfillmentStatus = hasLocalItems
     ? "printful_submitted_local_pending"
     : "printful_submitted";
+  const firstOrder = printfulOrders[0];
+  const ordersJson = JSON.stringify(printfulOrders);
   await sql`
     UPDATE storefront_orders
     SET fulfillment_status = ${fulfillmentStatus},
-        printful_order_id = ${printfulOrderId},
-        printful_status = ${printfulStatus},
+        printful_order_id = ${firstOrder?.orderId ?? null},
+        printful_status = ${firstOrder?.status ?? null},
+        printful_orders = ${ordersJson}::jsonb,
         last_error = NULL,
         updated_at = NOW()
     WHERE id = ${orderId}

@@ -129,7 +129,8 @@
 }
 
 .notice,
-.error {
+.error,
+.success {
   background: #f7e9dc;
   border-left: 3px solid #b8663a;
   color: #6d351e;
@@ -137,6 +138,12 @@
   line-height: 1.55;
   margin: 18px 0 0;
   padding: 13px 15px;
+}
+
+.success {
+  background: #e8f1e8;
+  border-left-color: #496e52;
+  color: #28462f;
 }
 
 .adminHeader {
@@ -203,6 +210,31 @@
   flex: 0 0 190px;
   margin: 0;
   width: auto;
+}
+
+.headingActions {
+  align-items: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.syncButton {
+  background: transparent;
+  border: 1px solid #172231;
+  color: #172231;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  min-height: 52px;
+  padding: 0 18px;
+  text-transform: uppercase;
+}
+
+.syncButton:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .toolbar {
@@ -306,6 +338,112 @@
   font-size: 0.74rem;
   line-height: 1.55;
   margin: 0;
+}
+
+.productEditor {
+  border-bottom: 1px solid #ddd5c8;
+  margin-bottom: 28px;
+  padding-bottom: 30px;
+}
+
+.editorGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+  margin-top: 22px;
+}
+
+.editorGrid label,
+.priceEditor label {
+  display: grid;
+  gap: 7px;
+}
+
+.editorGrid label > span,
+.priceEditor label > span:first-child {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editorGrid input,
+.editorGrid select,
+.editorGrid textarea,
+.priceInput input {
+  background: white;
+  border: 1px solid #cfc6b8;
+  border-radius: 0;
+  color: #172231;
+  font: inherit;
+  min-height: 46px;
+  padding: 10px 13px;
+  width: 100%;
+}
+
+.editorGrid textarea {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.descriptionField {
+  grid-column: 1 / -1;
+}
+
+.priceEditor {
+  margin-top: 28px;
+}
+
+.priceEditor h4 {
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0 0 5px;
+}
+
+.priceEditor > p {
+  color: #737a73;
+  font-size: 0.7rem;
+  margin: 0 0 15px;
+}
+
+.priceEditor > div {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.priceEditor label {
+  background: white;
+  border: 1px solid #e1dace;
+  padding: 12px;
+}
+
+.priceInput {
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.priceInput b {
+  color: #737a73;
+  font-size: 0.8rem;
+  left: 11px;
+  position: absolute;
+}
+
+.priceInput input {
+  padding-left: 25px;
+}
+
+.priceEditor label > button {
+  background: none;
+  border: 0;
+  color: #8b303a;
+  cursor: pointer;
+  font-size: 0.61rem;
+  padding: 0;
+  text-align: left;
 }
 
 .imageOptions {
@@ -497,6 +635,14 @@
     width: 100%;
   }
 
+  .headingActions {
+    flex-direction: column;
+  }
+
+  .syncButton {
+    width: 100%;
+  }
+
   .toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -523,6 +669,14 @@
 
   .imageManager {
     padding: 24px 14px 28px;
+  }
+
+  .editorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .descriptionField {
+    grid-column: auto;
   }
 
   .imageUrlForm {

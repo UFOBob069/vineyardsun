@@ -5,9 +5,12 @@ export type CatalogVariant = {
   id: number;
   title: string;
   price: number;
+  sourcePrice?: number;
   compareAtPrice: number | null;
   available: boolean;
   sku: string | null;
+  printfulVariantId?: string;
+  printfulVariantReference?: "external" | "sync";
 };
 
 export type CatalogProduct = {
@@ -18,8 +21,16 @@ export type CatalogProduct = {
   fulfillment: "local" | "printful";
   description: string;
   image: string | null;
+  images?: string[];
   available: boolean;
   variants: CatalogVariant[];
+  source?: "legacy" | "printful-api";
+  sourceTitle?: string;
+  titleOverride?: string | null;
+  category?: string;
+  priceOverrides?: Record<string, number>;
+  printfulStoreId?: string;
+  printfulProductId?: string;
 };
 
 type MerchandisingConfig = {
@@ -38,8 +49,15 @@ export function productIsInStorefrontCatalog(handle: string) {
   );
 }
 
-export function findCatalogVariant(productId: number, variantId: number) {
-  const product = catalog.find((item) => item.id === productId);
+export function findCatalogVariant(
+  productId: number,
+  variantId: number,
+  products: CatalogProduct[] = catalog,
+  handle?: string,
+) {
+  const product = products.find(
+    (item) => item.id === productId && (!handle || item.handle === handle),
+  );
   const variant = product?.variants.find((item) => item.id === variantId);
   return product && variant ? { product, variant } : null;
 }

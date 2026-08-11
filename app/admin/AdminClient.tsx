@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import catalogData from "../data/catalog.json";
+import type { CatalogProduct } from "../lib/catalog";
 import {
   MAX_CUSTOM_IMAGES_PER_PRODUCT,
   normalizeRemoteImageUrl,
@@ -11,7 +11,15 @@ import {
 } from "../lib/product-image-settings";
 import styles from "./admin.module.css";
 
-type Product = (typeof catalogData)[number];
+type Product = CatalogProduct;
+
+type SyncedProductEdit = {
+  handle: string;
+  titleOverride: string | null;
+  description: string;
+  category: string;
+  priceOverrides: Record<string, number>;
+};
 
 function cloneImageSettings(settings: ProductImageSettings): ProductImageSettings {
   return Object.fromEntries(
@@ -30,25 +38,67 @@ function serializeImageSettings(settings: ProductImageSettings) {
   );
 }
 
+function editsForProducts(products: Product[]) {
+  return Object.fromEntries(
+    products
+      .filter((product) => product.source === "printful-api")
+      .map((product) => [
+        product.handle,
+        {
+          handle: product.handle,
+          titleOverride: product.titleOverride ?? null,
+          description: product.description,
+          category: product.category ?? product.type ?? "Apparel",
+          priceOverrides: { ...(product.priceOverrides ?? {}) },
+        } satisfies SyncedProductEdit,
+      ]),
+  ) as Record<string, SyncedProductEdit>;
+}
+
+function serializeSyncedEdits(edits: Record<string, SyncedProductEdit>) {
+  return JSON.stringify(
+    Object.values(edits)
+      .sort((first, second) => first.handle.localeCompare(second.handle))
+      .map((edit) => ({
+        ...edit,
+        priceOverrides: Object.fromEntries(
+          Object.entries(edit.priceOverrides).sort(([first], [second]) =>
+            first.localeCompare(second),
+          ),
+        ),
+      })),
+  );
+}
+
 export function AdminClient() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [configured, setConfigured] = useState(true);
   const [password, setPassword] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
   const [hiddenHandles, setHiddenHandles] = useState<Set<string>>(new Set());
   const [savedHandles, setSavedHandles] = useState<Set<string>>(new Set());
   const [productImageSettings, setProductImageSettings] = useState<ProductImageSettings>({});
   const [savedImageSettings, setSavedImageSettings] = useState<ProductImageSettings>({});
+  const [syncedProductEdits, setSyncedProductEdits] = useState<
+    Record<string, SyncedProductEdit>
+  >({});
+  const [savedSyncedProductEdits, setSavedSyncedProductEdits] = useState<
+    Record<string, SyncedProductEdit>
+  >({});
   const [expandedHandle, setExpandedHandle] = useState<string | null>(null);
   const [imageUrlDrafts, setImageUrlDrafts] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  const loadMerchandising = async () => {
-    const response = await fetch("/api/merchandising", { cache: "no-store" });
+  const loadCatalog = async () => {
+    const response = await fetch("/api/admin/products", { cache: "no-store" });
     if (!response.ok) throw new Error("Could not load product settings.");
     const data = (await response.json()) as {
+      products: Product[];
       hiddenProductHandles: string[];
       productImageSettings: ProductImageSettings;
     };
@@ -58,6 +108,10 @@ export function AdminClient() {
     setSavedHandles(new Set(next));
     setProductImageSettings(nextImages);
     setSavedImageSettings(cloneImageSettings(nextImages));
+    setProducts(data.products);
+    const edits = editsForProducts(data.products);
+    setSyncedProductEdits(edits);
+    setSavedSyncedProductEdits(editsForProducts(data.products));
   };
 
   useEffect(() => {
@@ -70,7 +124,7 @@ export function AdminClient() {
         };
         setAuthenticated(data.authenticated);
         setConfigured(data.configured);
-        if (data.authenticated) await loadMerchandising();
+        if (data.authenticated) await loadCatalog();
       } catch {
         setError("The admin area could not be loaded. Please try again.");
       } finally {
@@ -82,16 +136,18 @@ export function AdminClient() {
 
   const filteredProducts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return catalogData;
-    return catalogData.filter((product) =>
+    if (!normalized) return products;
+    return products.filter((product) =>
       `${product.title} ${product.type}`.toLowerCase().includes(normalized),
     );
-  }, [query]);
+  }, [products, query]);
 
   const hasChanges =
     hiddenHandles.size !== savedHandles.size ||
     [...hiddenHandles].some((handle) => !savedHandles.has(handle)) ||
-    serializeImageSettings(productImageSettings) !== serializeImageSettings(savedImageSettings);
+    serializeImageSettings(productImageSettings) !== serializeImageSettings(savedImageSettings) ||
+    serializeSyncedEdits(syncedProductEdits) !==
+      serializeSyncedEdits(savedSyncedProductEdits);
 
   const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,7 +163,7 @@ export function AdminClient() {
       if (!response.ok) throw new Error(data.error ?? "Sign in failed.");
       setAuthenticated(true);
       setPassword("");
-      await loadMerchandising();
+      await loadCatalog();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Sign in failed.");
     } finally {
@@ -118,10 +174,13 @@ export function AdminClient() {
   const logout = async () => {
     await fetch("/api/admin/logout", { method: "POST" });
     setAuthenticated(false);
+    setProducts([]);
     setHiddenHandles(new Set());
     setSavedHandles(new Set());
     setProductImageSettings({});
     setSavedImageSettings({});
+    setSyncedProductEdits({});
+    setSavedSyncedProductEdits({});
     setExpandedHandle(null);
   };
 
@@ -138,7 +197,8 @@ export function AdminClient() {
   const setProductImageSetting = (product: Product, setting: ProductImageSetting) => {
     setProductImageSettings((current) => {
       const next = { ...current };
-      const isCatalogDefault = !setting.defaultUrl || setting.defaultUrl === product.image;
+      const sourceDefault = product.image ?? product.images?.[0] ?? null;
+      const isCatalogDefault = !setting.defaultUrl || setting.defaultUrl === sourceDefault;
       if (!setting.urls.length && isCatalogDefault) delete next[product.handle];
       else next[product.handle] = setting;
       return next;
@@ -155,7 +215,11 @@ export function AdminClient() {
     }
 
     const current = productImageSettings[product.handle] ?? { urls: [], defaultUrl: null };
-    if (current.urls.includes(imageUrl) || product.image === imageUrl) {
+    if (
+      current.urls.includes(imageUrl) ||
+      product.image === imageUrl ||
+      product.images?.includes(imageUrl)
+    ) {
       setError("That image is already listed for this product.");
       return;
     }
@@ -178,7 +242,7 @@ export function AdminClient() {
       urls,
       defaultUrl:
         current.defaultUrl === imageUrl
-          ? product.image ?? urls[0] ?? null
+          ? product.image ?? product.images?.[0] ?? urls[0] ?? null
           : current.defaultUrl,
     });
   };
@@ -186,6 +250,74 @@ export function AdminClient() {
   const chooseDefaultImage = (product: Product, imageUrl: string) => {
     const current = productImageSettings[product.handle] ?? { urls: [], defaultUrl: null };
     setProductImageSetting(product, { ...current, defaultUrl: imageUrl });
+  };
+
+  const updateSyncedProduct = (
+    handle: string,
+    update: (current: SyncedProductEdit) => SyncedProductEdit,
+  ) => {
+    setSyncedProductEdits((current) => {
+      const edit = current[handle];
+      return edit ? { ...current, [handle]: update(edit) } : current;
+    });
+    setError("");
+    setNotice("");
+  };
+
+  const updatePriceOverride = (
+    product: Product,
+    variantId: number,
+    value: string,
+  ) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0.5) return;
+    updateSyncedProduct(product.handle, (current) => ({
+      ...current,
+      priceOverrides: {
+        ...current.priceOverrides,
+        [String(variantId)]: Math.round(parsed * 100),
+      },
+    }));
+  };
+
+  const resetPriceOverride = (product: Product, variantId: number) => {
+    updateSyncedProduct(product.handle, (current) => {
+      const priceOverrides = { ...current.priceOverrides };
+      delete priceOverrides[String(variantId)];
+      return { ...current, priceOverrides };
+    });
+  };
+
+  const syncPrintful = async () => {
+    if (hasChanges) {
+      setError("Save your current changes before syncing from Printful.");
+      return;
+    }
+    setSyncing(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/printful-sync", { method: "POST" });
+      const data = (await response.json()) as {
+        error?: string;
+        imported?: number;
+        added?: number;
+        updated?: number;
+        deactivated?: number;
+      };
+      if (!response.ok) {
+        if (response.status === 401) setAuthenticated(false);
+        throw new Error(data.error ?? "Printful sync failed.");
+      }
+      await loadCatalog();
+      setNotice(
+        `Synced ${data.imported ?? 0} product${data.imported === 1 ? "" : "s"} from David's Store · ${data.added ?? 0} new · ${data.updated ?? 0} updated. New products remain hidden until you publish them.`,
+      );
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Printful sync failed.");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const save = async () => {
@@ -198,6 +330,7 @@ export function AdminClient() {
         body: JSON.stringify({
           hiddenProductHandles: [...hiddenHandles],
           productImageSettings,
+          syncedProductEdits: Object.values(syncedProductEdits),
         }),
       });
       const data = (await response.json()) as {
@@ -215,6 +348,15 @@ export function AdminClient() {
       setSavedHandles(new Set(savedHandlesFromResponse));
       setProductImageSettings(savedImages);
       setSavedImageSettings(cloneImageSettings(savedImages));
+      setSavedSyncedProductEdits(
+        Object.fromEntries(
+          Object.entries(syncedProductEdits).map(([handle, edit]) => [
+            handle,
+            { ...edit, priceOverrides: { ...edit.priceOverrides } },
+          ]),
+        ),
+      );
+      setNotice("Product settings saved.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save changes.");
     } finally {
@@ -279,16 +421,29 @@ export function AdminClient() {
           <div>
             <p className={styles.eyebrow}>Storefront catalog</p>
             <h1>Choose what customers see.</h1>
-            <p>{catalogData.length - hiddenHandles.size} visible · {hiddenHandles.size} hidden</p>
+            <p>
+              {products.filter((product) => !hiddenHandles.has(product.handle)).length} visible ·{" "}
+              {products.filter((product) => hiddenHandles.has(product.handle)).length} hidden
+            </p>
           </div>
-          <button
-            className={styles.saveButton}
-            disabled={!hasChanges || saving}
-            onClick={save}
-            type="button"
-          >
-            {saving ? "Saving…" : hasChanges ? "Save changes" : "Saved"}
-          </button>
+          <div className={styles.headingActions}>
+            <button
+              className={styles.syncButton}
+              disabled={syncing || saving}
+              onClick={syncPrintful}
+              type="button"
+            >
+              {syncing ? "Syncing…" : "Sync David's Store"}
+            </button>
+            <button
+              className={styles.saveButton}
+              disabled={!hasChanges || saving || syncing}
+              onClick={save}
+              type="button"
+            >
+              {saving ? "Saving…" : hasChanges ? "Save changes" : "Saved"}
+            </button>
+          </div>
         </div>
 
         <div className={styles.toolbar}>
@@ -305,7 +460,7 @@ export function AdminClient() {
             <button type="button" onClick={() => setHiddenHandles(new Set())}>Show all</button>
             <button
               type="button"
-              onClick={() => setHiddenHandles(new Set(catalogData.map((product) => product.handle)))}
+              onClick={() => setHiddenHandles(new Set(products.map((product) => product.handle)))}
             >
               Hide all
             </button>
@@ -313,6 +468,7 @@ export function AdminClient() {
         </div>
 
         {error && <p className={styles.error} role="alert">{error}</p>}
+        {notice && <p className={styles.success} role="status">{notice}</p>}
 
         <div className={styles.productList}>
           {filteredProducts.map((product: Product) => {
@@ -322,12 +478,21 @@ export function AdminClient() {
               defaultUrl: null,
             };
             const defaultImage =
-              imageSetting.defaultUrl ?? product.image ?? imageSetting.urls[0] ?? null;
-            const images = [product.image, ...imageSetting.urls].filter(
+              imageSetting.defaultUrl ??
+              product.image ??
+              product.images?.[0] ??
+              imageSetting.urls[0] ??
+              null;
+            const sourceImages = [product.image, ...(product.images ?? [])].filter(
+              (image, index, values): image is string =>
+                Boolean(image) && values.indexOf(image) === index,
+            );
+            const images = [...sourceImages, ...imageSetting.urls].filter(
               (image, index, values): image is string =>
                 Boolean(image) && values.indexOf(image) === index,
             );
             const imageManagerOpen = expandedHandle === product.handle;
+            const syncedEdit = syncedProductEdits[product.handle];
             return (
               <div className={styles.productEntry} key={product.handle}>
                 <article className={styles.productRow}>
@@ -335,8 +500,15 @@ export function AdminClient() {
                     {defaultImage && <img src={defaultImage} alt="" />}
                   </div>
                   <div className={styles.productCopy}>
-                    <h2>{product.title}</h2>
-                    <p>{product.type || "Vineyard Sun product"} · {product.fulfillment === "printful" ? "Made to order" : "Stocked at home"}</p>
+                    <h2>{syncedEdit?.titleOverride || product.sourceTitle || product.title}</h2>
+                    <p>
+                      {syncedEdit?.category || product.type || "Vineyard Sun product"} ·{" "}
+                      {product.source === "printful-api"
+                        ? "David's Store"
+                        : product.fulfillment === "printful"
+                          ? "Legacy Printful"
+                          : "Stocked at home"}
+                    </p>
                     <button
                       aria-expanded={imageManagerOpen}
                       className={styles.imageToggle}
@@ -344,8 +516,10 @@ export function AdminClient() {
                       type="button"
                     >
                       {imageManagerOpen
-                        ? "Close images"
-                        : `Manage ${images.length} image${images.length === 1 ? "" : "s"}`}
+                        ? "Close editor"
+                        : product.source === "printful-api"
+                          ? "Edit product"
+                          : `Manage ${images.length} image${images.length === 1 ? "" : "s"}`}
                     </button>
                   </div>
                   <button
@@ -365,6 +539,97 @@ export function AdminClient() {
 
                 {imageManagerOpen && (
                   <section className={styles.imageManager} aria-label={`${product.title} images`}>
+                    {syncedEdit && (
+                      <div className={styles.productEditor}>
+                        <div className={styles.imageManagerHeading}>
+                          <h3>Storefront details</h3>
+                          <p>
+                            Printful keeps the production data. These fields control what
+                            customers see on Vineyard Sun.
+                          </p>
+                        </div>
+                        <div className={styles.editorGrid}>
+                          <label>
+                            <span>Product title</span>
+                            <input
+                              onChange={(event) =>
+                                updateSyncedProduct(product.handle, (current) => ({
+                                  ...current,
+                                  titleOverride: event.target.value,
+                                }))
+                              }
+                              value={syncedEdit.titleOverride ?? product.sourceTitle ?? product.title}
+                            />
+                          </label>
+                          <label>
+                            <span>Category</span>
+                            <select
+                              onChange={(event) =>
+                                updateSyncedProduct(product.handle, (current) => ({
+                                  ...current,
+                                  category: event.target.value,
+                                }))
+                              }
+                              value={syncedEdit.category}
+                            >
+                              <option>Apparel</option>
+                              <option>Accessories</option>
+                              <option>Home</option>
+                              <option>Eyewear</option>
+                            </select>
+                          </label>
+                          <label className={styles.descriptionField}>
+                            <span>Description</span>
+                            <textarea
+                              onChange={(event) =>
+                                updateSyncedProduct(product.handle, (current) => ({
+                                  ...current,
+                                  description: event.target.value,
+                                }))
+                              }
+                              placeholder="Tell customers about this product…"
+                              rows={6}
+                              value={syncedEdit.description}
+                            />
+                          </label>
+                        </div>
+                        <div className={styles.priceEditor}>
+                          <h4>Storefront prices</h4>
+                          <p>Printful prices are used unless you enter an override.</p>
+                          <div>
+                            {product.variants.map((variant) => {
+                              const override = syncedEdit.priceOverrides[String(variant.id)];
+                              const sourcePrice = variant.sourcePrice ?? variant.price;
+                              return (
+                                <label key={variant.id}>
+                                  <span>{variant.title}</span>
+                                  <span className={styles.priceInput}>
+                                    <b>$</b>
+                                    <input
+                                      min="0.50"
+                                      onChange={(event) =>
+                                        updatePriceOverride(product, variant.id, event.target.value)
+                                      }
+                                      step="0.01"
+                                      type="number"
+                                      value={((override ?? Math.round(sourcePrice * 100)) / 100).toFixed(2)}
+                                    />
+                                  </span>
+                                  {override !== undefined && (
+                                    <button
+                                      onClick={() => resetPriceOverride(product, variant.id)}
+                                      type="button"
+                                    >
+                                      Use Printful price
+                                    </button>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className={styles.imageManagerHeading}>
                       <h3>Product images</h3>
                       <p>Choose the default used on product cards and in the cart.</p>
@@ -378,7 +643,7 @@ export function AdminClient() {
                       >
                         {images.map((imageUrl, index) => {
                           const selected = imageUrl === defaultImage;
-                          const original = imageUrl === product.image;
+                          const original = sourceImages.includes(imageUrl);
                           return (
                             <div
                               className={`${styles.imageOption} ${selected ? styles.imageOptionSelected : ""}`}
@@ -395,7 +660,7 @@ export function AdminClient() {
                                 <span>{selected ? "Default" : "Make default"}</span>
                               </button>
                               <div className={styles.imageOptionMeta}>
-                                <span>{original ? "Original image" : `Added image ${index}`}</span>
+                                <span>{original ? "Printful image" : `Added image ${index}`}</span>
                                 {!original && (
                                   <button
                                     onClick={() => removeImageUrl(product, imageUrl)}

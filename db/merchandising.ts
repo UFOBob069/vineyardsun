@@ -83,3 +83,30 @@ export async function replaceMerchandisingSettings({
         updated_at = NOW()
   `;
 }
+
+export async function addHiddenProductHandles(handles: string[]) {
+  const additions = handles.map((handle) => handle.trim()).filter(Boolean);
+  if (!additions.length) return;
+  const sql = getDb();
+  await ensureSchema();
+  const rows = (await sql`
+    SELECT hidden_handles
+    FROM merchandising_settings
+    WHERE id = 'storefront'
+    LIMIT 1
+  `) as Array<{ hidden_handles: unknown }>;
+  const current = Array.isArray(rows[0]?.hidden_handles)
+    ? rows[0].hidden_handles.filter(
+        (handle): handle is string => typeof handle === "string",
+      )
+    : fallbackConfig.hiddenProductHandles;
+  const handlesJson = JSON.stringify([...new Set([...current, ...additions])]);
+
+  await sql`
+    INSERT INTO merchandising_settings (id, hidden_handles, updated_at)
+    VALUES ('storefront', ${handlesJson}::jsonb, NOW())
+    ON CONFLICT (id) DO UPDATE
+    SET hidden_handles = EXCLUDED.hidden_handles,
+        updated_at = NOW()
+  `;
+}

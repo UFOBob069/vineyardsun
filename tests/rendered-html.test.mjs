@@ -97,3 +97,31 @@ test("includes a password-protected persistent product admin", async () => {
   assert.match(storefront, /dialog-thumbnails/);
   assert.match(environment, /DATABASE_URL=postgresql:/);
 });
+
+test("isolates the Manual API store sync and preserves multi-store fulfillment", async () => {
+  const [syncRoute, syncService, syncedProducts, adminClient, checkout, webhook, printful, environment] =
+    await Promise.all([
+      readFile(new URL("../app/api/admin/printful-sync/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/printful-sync.ts", import.meta.url), "utf8"),
+      readFile(new URL("../db/synced-products.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/admin/AdminClient.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/checkout/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/lib/printful.ts", import.meta.url), "utf8"),
+      readFile(new URL("../.env.example", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(syncRoute, /requestIsAdmin/);
+  assert.match(syncService, /\/store\/products/);
+  assert.match(syncService, /cache: "no-store"/);
+  assert.match(syncedProducts, /DAVIDS_PRINTFUL_STORE_ID = "18593823"/);
+  assert.match(syncedProducts, /addHiddenProductHandles/);
+  assert.match(syncedProducts, /ON CONFLICT \(printful_store_id, printful_product_id\)/);
+  assert.match(adminClient, /Sync David's Store/);
+  assert.match(adminClient, /Storefront details/);
+  assert.match(adminClient, /Use Printful price/);
+  assert.match(checkout, /getSyncedCatalogProducts/);
+  assert.match(webhook, /linesByStore/);
+  assert.match(printful, /sync_variant_id/);
+  assert.match(environment, /PRINTFUL_SYNC_STORE_ID=18593823/);
+});

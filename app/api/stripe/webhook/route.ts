@@ -60,17 +60,32 @@ async function fulfillPaidSession(session: Stripe.Checkout.Session) {
   }
 
   try {
-    const printfulOrder = await submitPrintfulOrder({
-      orderId,
-      lines: printfulLines,
-      shipping,
-      email: session.customer_details?.email ?? null,
-      phone: session.customer_details?.phone ?? null,
-    });
+    const legacyStoreId = process.env.PRINTFUL_STORE_ID?.trim();
+    if (!legacyStoreId) throw new Error("PRINTFUL_STORE_ID is not configured.");
+    const linesByStore = new Map<string, typeof printfulLines>();
+    for (const line of printfulLines) {
+      const storeId = line.printfulStoreId ?? legacyStoreId;
+      linesByStore.set(storeId, [...(linesByStore.get(storeId) ?? []), line]);
+    }
+    const printfulOrders = [];
+    for (const [storeId, lines] of linesByStore) {
+      const printfulOrder = await submitPrintfulOrder({
+        orderId,
+        storeId,
+        lines,
+        shipping,
+        email: session.customer_details?.email ?? null,
+        phone: session.customer_details?.phone ?? null,
+      });
+      printfulOrders.push({
+        storeId,
+        orderId: String(printfulOrder.id),
+        status: printfulOrder.status,
+      });
+    }
     await markPrintfulSubmitted({
       orderId,
-      printfulOrderId: String(printfulOrder.id),
-      printfulStatus: printfulOrder.status,
+      printfulOrders,
       hasLocalItems,
     });
   } catch (error) {

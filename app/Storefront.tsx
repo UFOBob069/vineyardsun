@@ -9,33 +9,16 @@ import {
 } from "react";
 import catalogData from "./data/catalog.json";
 import merchandisingData from "./data/merchandising.json";
+import type { CatalogProduct, CatalogVariant } from "./lib/catalog";
 import type { ProductImageSettings } from "./lib/product-image-settings";
 
-type Variant = {
-  id: number;
-  title: string;
-  price: number;
-  compareAtPrice: number | null;
-  available: boolean;
-  sku: string | null;
-};
-
-type Product = {
-  id: number;
-  title: string;
-  handle: string;
-  type: string;
-  fulfillment: "local" | "printful";
-  description: string;
-  image: string | null;
-  images?: string[];
-  available: boolean;
-  variants: Variant[];
-};
+type Variant = CatalogVariant;
+type Product = CatalogProduct;
 
 type CartLine = {
   variantId: number;
   productId: number;
+  productHandle?: string;
   quantity: number;
 };
 
@@ -48,7 +31,6 @@ type MerchandisingConfig = {
   priorityProductHandles: string[];
 };
 
-const allProducts = catalogData as Product[];
 const merchandising = merchandisingData as MerchandisingConfig;
 
 const partners = [
@@ -120,9 +102,11 @@ function fulfillmentCopy(product: Product) {
 export function Storefront({
   initialHiddenHandles,
   initialProductImageSettings,
+  initialSyncedProducts,
 }: {
   initialHiddenHandles: string[];
   initialProductImageSettings: ProductImageSettings;
+  initialSyncedProducts: Product[];
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -134,6 +118,10 @@ export function Storefront({
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const allProducts = useMemo(
+    () => [...(catalogData as Product[]), ...initialSyncedProducts],
+    [initialSyncedProducts],
+  );
   const products = useMemo(() => {
     const allowedHandles = new Set(merchandising.catalogProductHandles);
     const hiddenHandles = new Set([
@@ -150,6 +138,7 @@ export function Storefront({
         const images = [
           imageSetting?.defaultUrl,
           product.image,
+          ...(product.images ?? []),
           ...(imageSetting?.urls ?? []),
         ].filter(
           (image, index, values): image is string =>
@@ -170,7 +159,7 @@ export function Storefront({
           priorityByHandle.get(second.handle) ?? Number.MAX_SAFE_INTEGER;
         return firstPriority - secondPriority;
       });
-  }, [initialHiddenHandles, initialProductImageSettings]);
+  }, [allProducts, initialHiddenHandles, initialProductImageSettings]);
   const featuredProduct =
     products.find(
       (product) => product.handle === merchandising.featuredProductHandle,
@@ -228,7 +217,11 @@ export function Storefront({
 
   const cartDetails = cart
     .map((line) => {
-      const product = allProducts.find((item) => item.id === line.productId);
+      const product = allProducts.find(
+        (item) =>
+          (line.productHandle && item.handle === line.productHandle) ||
+          (!line.productHandle && item.id === line.productId),
+      );
       const variant = product?.variants.find(
         (item) => item.id === line.variantId,
       );
@@ -244,29 +237,50 @@ export function Storefront({
 
   const addToCart = (product: Product, variant: Variant) => {
     setCart((current) => {
-      const existing = current.find((line) => line.variantId === variant.id);
+      const existing = current.find(
+        (line) =>
+          line.variantId === variant.id &&
+          (line.productHandle === product.handle ||
+            (!line.productHandle && line.productId === product.id)),
+      );
       if (existing) {
         return current.map((line) =>
-          line.variantId === variant.id
+          line.variantId === variant.id &&
+          (line.productHandle === product.handle ||
+            (!line.productHandle && line.productId === product.id))
             ? { ...line, quantity: Math.min(line.quantity + 1, 10) }
             : line,
         );
       }
       return [
         ...current,
-        { productId: product.id, variantId: variant.id, quantity: 1 },
+        {
+          productId: product.id,
+          productHandle: product.handle,
+          variantId: variant.id,
+          quantity: 1,
+        },
       ];
     });
     setSelectedProduct(null);
     setCartOpen(true);
   };
 
-  const updateQuantity = (variantId: number, quantity: number) => {
+  const updateQuantity = (
+    productHandle: string,
+    variantId: number,
+    quantity: number,
+  ) => {
     setCart((current) =>
       quantity <= 0
-        ? current.filter((line) => line.variantId !== variantId)
+        ? current.filter(
+            (line) =>
+              line.variantId !== variantId ||
+              (line.productHandle ?? productHandle) !== productHandle,
+          )
         : current.map((line) =>
-            line.variantId === variantId
+            line.variantId === variantId &&
+            (line.productHandle ?? productHandle) === productHandle
               ? { ...line, quantity: Math.min(quantity, 10) }
               : line,
           ),
@@ -286,6 +300,7 @@ export function Storefront({
           lines: cartDetails.map((line) => ({
             productId: line.productId,
             variantId: line.variantId,
+            productHandle: line.product.handle,
             quantity: line.quantity,
           })),
         }),
@@ -531,7 +546,7 @@ export function Storefront({
           <div className="product-grid">
             {visibleProducts.map((product, index) => (
               <ProductCard
-                key={product.id}
+                key={product.handle}
                 product={product}
                 index={index}
                 onOpen={() => setSelectedProduct(product)}
@@ -948,7 +963,7 @@ function CartDrawer({
   checkoutError: string;
   onCheckout: () => void;
   onClose: () => void;
-  onUpdate: (variantId: number, quantity: number) => void;
+  onUpdate: (productHandle: string, variantId: number, quantity: number) => void;
 }) {
   return (
     <div
@@ -978,7 +993,10 @@ function CartDrawer({
           <>
             <div className="cart-lines">
               {lines.map((line) => (
-                <article className="cart-line" key={line.variant.id}>
+                <article
+                  className="cart-line"
+                  key={`${line.product.handle}:${line.variant.id}`}
+                >
                   <div className="cart-line-image">
                     {line.product.image && (
                       <img src={line.product.image} alt="" />
@@ -993,7 +1011,13 @@ function CartDrawer({
                     <div className="quantity-control" aria-label="Quantity controls">
                       <button
                         type="button"
-                        onClick={() => onUpdate(line.variant.id, line.quantity - 1)}
+                        onClick={() =>
+                          onUpdate(
+                            line.product.handle,
+                            line.variant.id,
+                            line.quantity - 1,
+                          )
+                        }
                         aria-label={`Decrease ${line.product.title} quantity`}
                       >
                         −
@@ -1001,7 +1025,13 @@ function CartDrawer({
                       <span>{line.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => onUpdate(line.variant.id, line.quantity + 1)}
+                        onClick={() =>
+                          onUpdate(
+                            line.product.handle,
+                            line.variant.id,
+                            line.quantity + 1,
+                          )
+                        }
                         aria-label={`Increase ${line.product.title} quantity`}
                       >
                         +

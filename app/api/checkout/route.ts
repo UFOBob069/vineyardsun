@@ -7,11 +7,13 @@ import {
   type OrderLine,
 } from "../../../db/orders";
 import {
+  catalog,
   cents,
   findCatalogVariant,
   productIsInStorefrontCatalog,
 } from "../../lib/catalog";
 import { getStripe } from "../../lib/stripe";
+import { getSyncedCatalogProducts } from "../../../db/synced-products";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -19,6 +21,7 @@ export const maxDuration = 30;
 type RequestedLine = {
   productId: number;
   variantId: number;
+  productHandle: string;
   quantity: number;
 };
 
@@ -40,19 +43,23 @@ function parseRequestedLines(value: unknown): RequestedLine[] {
     if (
       !positiveInteger(candidate.productId) ||
       !positiveInteger(candidate.variantId) ||
+      typeof candidate.productHandle !== "string" ||
+      !candidate.productHandle.trim() ||
+      candidate.productHandle.length > 140 ||
       !positiveInteger(candidate.quantity) ||
       candidate.quantity! > 10
     ) {
       throw new Error("Invalid bag quantity or product.");
     }
 
-    const key = `${candidate.productId}:${candidate.variantId}`;
+    const key = `${candidate.productHandle}:${candidate.productId}:${candidate.variantId}`;
     const previous = combined.get(key);
     const quantity = (previous?.quantity ?? 0) + candidate.quantity!;
     if (quantity > 10) throw new Error("A product quantity cannot exceed 10.");
     combined.set(key, {
       productId: candidate.productId!,
       variantId: candidate.variantId!,
+      productHandle: candidate.productHandle,
       quantity,
     });
   }
@@ -83,16 +90,26 @@ export async function POST(request: Request) {
     }
 
     const requestedLines = parseRequestedLines(await request.json());
-    const { hiddenProductHandles } = await getMerchandisingSettings();
+    const [{ hiddenProductHandles }, syncedProducts] = await Promise.all([
+      getMerchandisingSettings(),
+      getSyncedCatalogProducts(),
+    ]);
+    const products = [...catalog, ...syncedProducts];
     const hiddenHandles = new Set(hiddenProductHandles);
     const orderLines: OrderLine[] = requestedLines.map((line) => {
-      const match = findCatalogVariant(line.productId, line.variantId);
+      const match = findCatalogVariant(
+        line.productId,
+        line.variantId,
+        products,
+        line.productHandle,
+      );
       if (
         !match ||
         !match.product.available ||
         !match.variant.available ||
         hiddenHandles.has(match.product.handle) ||
-        !productIsInStorefrontCatalog(match.product.handle)
+        (match.product.source !== "printful-api" &&
+          !productIsInStorefrontCatalog(match.product.handle))
       ) {
         throw new Error("One of the selected products is no longer available.");
       }
@@ -107,6 +124,18 @@ export async function POST(request: Request) {
         unitAmountCents: cents(match.variant.price),
         fulfillment: match.product.fulfillment,
         sku: match.variant.sku,
+        printfulStoreId:
+          match.product.fulfillment === "printful"
+            ? match.product.printfulStoreId ?? process.env.PRINTFUL_STORE_ID?.trim()
+            : undefined,
+        printfulVariantId:
+          match.product.fulfillment === "printful"
+            ? match.variant.printfulVariantId ?? String(match.variant.id)
+            : undefined,
+        printfulVariantReference:
+          match.product.fulfillment === "printful"
+            ? match.variant.printfulVariantReference ?? "external"
+            : undefined,
       };
     });
 
