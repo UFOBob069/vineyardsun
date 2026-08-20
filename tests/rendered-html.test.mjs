@@ -60,6 +60,9 @@ test("ships a complete local catalog snapshot and Stripe checkout adapter", asyn
   assert.match(webhook, /request\.text\(\)/);
   assert.match(webhook, /PRINTFUL_ALLOW_TEST_ORDERS/);
   assert.match(printful, /external_variant_id/);
+  assert.match(printful, /createHash\("sha256"\)/);
+  assert.match(printful, /slice\(0, 29\)/);
+  assert.doesNotMatch(printful, /external_id: `\$\{orderId\}-\$\{line\.variantId\}`/);
   assert.match(printful, /confirm=1&update_existing=true/);
   assert.match(orders, /storefront_orders/);
   assert.match(orders, /stripe_session_id TEXT UNIQUE/);

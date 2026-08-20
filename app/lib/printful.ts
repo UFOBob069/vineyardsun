@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { OrderLine } from "../../db/orders";
 import { DAVIDS_PRINTFUL_STORE_ID } from "../../db/synced-products";
 
@@ -86,6 +87,13 @@ async function confirmOrder(storeId: string, externalId: string) {
   return body.result;
 }
 
+export function printfulExternalOrderId(orderId: string) {
+  // Printful limits external order IDs to 32 characters. Hashing keeps the ID
+  // deterministic for webhook retries without exposing or truncating a UUID.
+  const digest = createHash("sha256").update(orderId).digest("hex").slice(0, 29);
+  return `vs_${digest}`;
+}
+
 export async function submitPrintfulOrder({
   orderId,
   storeId,
@@ -120,10 +128,7 @@ export async function submitPrintfulOrder({
     throw new Error("Printful order lines were assigned to different stores.");
   }
 
-  const externalId =
-    storeId === process.env.PRINTFUL_STORE_ID?.trim()
-      ? `vs-${orderId}`
-      : `vs-${orderId}-${storeId}`;
+  const externalId = printfulExternalOrderId(orderId);
   const existing = await findExistingOrder(storeId, externalId);
   if (existing) {
     if (orderWasSubmitted(existing)) return existing;
@@ -155,7 +160,6 @@ export async function submitPrintfulOrder({
       const variantId = line.printfulVariantId ?? String(line.variantId);
       const variantReference = line.printfulVariantReference ?? "external";
       return {
-        external_id: `${orderId}-${line.variantId}`,
         ...(variantReference === "sync"
           ? { sync_variant_id: Number(variantId) }
           : { external_variant_id: variantId }),

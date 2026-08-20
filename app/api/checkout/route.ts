@@ -175,6 +175,7 @@ export async function POST(request: Request) {
 
     const session = await getStripe().checkout.sessions.create(
       {
+        integration_identifier: "vineyard_sun_storefront_nxqvhkma",
         mode: "payment",
         client_reference_id: orderId,
         customer_creation: "always",
