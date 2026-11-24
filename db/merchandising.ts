@@ -36,7 +36,7 @@ export type MerchandisingSettings = {
   productImageSettings: ProductImageSettings;
 };
 
-export async function getMerchandisingSettings(): Promise<MerchandisingSettings> {
+export async function getMerchandisingSettings({ strict = false }: { strict?: boolean } = {}): Promise<MerchandisingSettings> {
   try {
     const sql = getDb();
     await ensureSchema();
@@ -55,7 +55,8 @@ export async function getMerchandisingSettings(): Promise<MerchandisingSettings>
         : fallbackConfig.hiddenProductHandles,
       productImageSettings: normalizeProductImageSettings(row?.product_images),
     };
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     return {
       hiddenProductHandles: fallbackConfig.hiddenProductHandles,
       productImageSettings: {},

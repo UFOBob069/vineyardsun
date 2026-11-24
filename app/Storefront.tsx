@@ -827,9 +827,9 @@ function ProductCard({
         {!product.available && <span className="sold-tag">Sold out</span>}
       </button>
       <div className="product-info">
-        <button className="product-title" type="button" onClick={onOpen}>
+        <a className="product-title" href={`/products/${product.handle}`}>
           {product.title}
-        </button>
+        </a>
         <p>{fulfillmentCopy(product)}</p>
         <div className="product-bottom">
           <span>From {money(startingPrice(product))}</span>

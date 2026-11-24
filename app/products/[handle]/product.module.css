@@ -1,0 +1,15 @@
+.main { max-width: 1280px; margin: auto; padding: 40px 5vw 80px; }
+.main nav { margin-bottom: 32px; font-size: .9rem; line-height: 1.8; }
+.product { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.images { display: grid; gap: 18px; }
+.images img { width: 100%; height: auto; max-height: 700px; object-fit: contain; background: #f3f1ec; }
+.details h1 { font-family: var(--font-display), Georgia, serif; font-size: clamp(2.4rem, 4vw, 4rem); line-height: 1.05; margin: 14px 0 24px; }
+.price { font-size: 1.8rem; margin: 0 0 12px; }
+.price small { font-size: 1rem; }
+.options { display: grid; gap: 12px; margin: 26px 0; }
+.options select { width: 100%; border: 1px solid #aaa; padding: 14px; background: white; font: inherit; }
+.note { font-size: .9rem; line-height: 1.6; margin: 20px 0 28px; }
+.description { line-height: 1.75; }
+.description p { margin: 0 0 16px; }
+.footer { display: flex; justify-content: space-between; gap: 24px; padding: 30px 5vw; border-top: 1px solid #ddd; }
+@media (max-width: 700px) { .product { grid-template-columns: 1fr; gap: 28px; } .main { padding-top: 24px; } .footer { flex-direction: column; } }
