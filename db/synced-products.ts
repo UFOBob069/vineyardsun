@@ -10,6 +10,9 @@ export type SyncedVariantInput = {
   priceCents: number;
   available: boolean;
   sku: string | null;
+  image?: string | null;
+  color?: string | null;
+  size?: string | null;
 };
 
 export type SyncedProductInput = {
@@ -145,6 +148,9 @@ function mapRow(row: SyncedProductRow): CatalogProduct {
         compareAtPrice: null,
         available: variant.available,
         sku: variant.sku,
+        image: variant.image,
+        color: variant.color,
+        size: variant.size,
         printfulVariantId: String(variant.id),
         printfulVariantReference: "sync",
       };

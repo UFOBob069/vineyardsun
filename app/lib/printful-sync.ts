@@ -12,6 +12,7 @@ type PrintfulListProduct = {
 };
 
 type PrintfulFile = {
+  type?: string;
   preview_url?: string | null;
   thumbnail_url?: string | null;
 };
@@ -140,6 +141,9 @@ async function getProduct(product: PrintfulListProduct): Promise<SyncedProductIn
           priceCents,
           available,
           sku: variant.sku ?? null,
+          image: (variant.files ?? []).find((file) => file.type === "preview")?.preview_url ?? null,
+          color: variant.color ?? null,
+          size: variant.size ?? null,
         },
       ];
     }),

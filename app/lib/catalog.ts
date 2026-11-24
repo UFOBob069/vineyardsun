@@ -9,6 +9,9 @@ export type CatalogVariant = {
   compareAtPrice: number | null;
   available: boolean;
   sku: string | null;
+  image?: string | null;
+  color?: string | null;
+  size?: string | null;
   printfulVariantId?: string;
   printfulVariantReference?: "external" | "sync";
 };

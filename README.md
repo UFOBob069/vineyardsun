@@ -1,5 +1,24 @@
 # Vineyard Sun storefront
 
+## Google discovery and product listings
+
+- `/sitemap.xml` includes the home page and every visible product page.
+- `/robots.txt` points crawlers to the sitemap and excludes admin, API and order paths.
+- `/google-shopping.xml` is the Merchant Center scheduled-fetch feed (English, USD, United States).
+- `/products/{handle}?variant={id}` shows the exact variant price, image and availability, with Product/Offer structured data and direct checkout.
+
+The sitemap and feed read current database visibility and pricing. They exclude hidden
+products and fail instead of publishing an empty feed during database outages.
+Printful sync preserves color, size and preview images for new products. The existing
+catalog's variant previews are snapshotted in `app/data/google-product-details.json`.
+New apparel without a matching photo, color and size is held out of the feed until
+those details are available. GTINs and manufacturer part numbers are not fabricated.
+
+The Google Search Console DNS verification TXT record must remain in Vercel DNS.
+Merchant Center still requires its own account setup, website claim, business details,
+shipping/returns settings and Google review; publishing the feed alone does not
+activate Shopping listings.
+
 The Vineyard Sun storefront keeps a local copy of the public product catalog,
 product photos, and brand assets. Its shopping bag creates a server-validated
 Stripe Checkout Session. Paid Printful items are then submitted automatically

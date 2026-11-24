@@ -5,6 +5,7 @@ type Details = { image: string; color: string | null; size: string | null };
 const variantDetails = details as Record<string, Record<string, Details>>;
 
 export function googleDetails(product: CatalogProduct, variant: CatalogVariant) {
+  if (variant.image) return { image: variant.image, color: variant.color ?? null, size: variant.size ?? null };
   const detail = variantDetails[product.handle]?.[String(variant.id)];
   if (detail) return detail;
   if (product.type === "Sunglasses" && product.image) {
