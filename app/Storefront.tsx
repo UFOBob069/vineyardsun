@@ -334,6 +334,7 @@ export function Storefront({
 
         <nav className={menuOpen ? "main-nav is-open" : "main-nav"}>
           <a href="#catalog" onClick={closeMenu}>Shop</a>
+          <a href="/custom-vineyard-sunglasses" onClick={closeMenu}>For wineries</a>
           <a href="#about" onClick={closeMenu}>About</a>
           <a href="#partners" onClick={closeMenu}>Partners</a>
           <a href="#reviews" onClick={closeMenu}>Reviews</a>
@@ -573,6 +574,17 @@ export function Storefront({
           )}
         </section>
 
+        <section className="custom-vineyard-section" id="custom-sunglasses">
+          <div>
+            <p className="eyebrow light">Working with vineyards worldwide since 2016</p>
+            <h2>Custom sunglasses.<br />Your vineyard&apos;s character.</h2>
+          </div>
+          <div>
+            <p>Bespoke sunglasses designed around your winery, your guests, and the occasion. From tasting-room retail to wine-club gifts and vineyard events, let&apos;s create something distinctly yours.</p>
+            <a className="button button-light" href="/custom-vineyard-sunglasses">Custom sunglasses for your winery <span aria-hidden="true">→</span></a>
+          </div>
+        </section>
+
         <section className="partners-section" id="partners">
           <div className="partners-heading">
             <div>
@@ -744,6 +756,7 @@ export function Storefront({
           <div>
             <h3>Explore</h3>
             <a href="#catalog">Catalog</a>
+            <a href="/custom-vineyard-sunglasses">Custom vineyard sunglasses</a>
             <a href="#about">About us</a>
             <a href="#partners">Partners</a>
             <a href="#reviews">Reviews</a>
