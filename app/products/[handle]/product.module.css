@@ -3,6 +3,20 @@
 .product { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
 .images { display: grid; gap: 18px; }
 .images img { width: 100%; height: auto; max-height: 700px; object-fit: contain; background: #f3f1ec; }
+.images .mainImage { aspect-ratio: 1 / 1; max-height: 540px; }
+.thumbnails { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.thumbnails button { flex: 0 0 75px; height: 75px; padding: 3px; background: transparent; border: 1px solid var(--line); }
+.thumbnails button[aria-pressed="true"] { border: 2px solid var(--wine); }
+.thumbnails img { height: 100%; object-fit: contain; }
+.photoHint { font-size: .75rem; color: var(--muted); margin: 0; }
+.previousPrice { font-size: 1rem; color: var(--muted); margin-left: 14px; }
+.review { margin: 24px 0; border-left: 2px solid var(--cork); padding-left: 18px; }
+.review blockquote { font-family: var(--font-display), Georgia, serif; font-size: 1.5rem; margin: 0 0 12px; }
+.review figcaption { font-size: .75rem; line-height: 1.8; }
+.review small { display: block; color: var(--muted); }
+.description h2, .help h2 { font-family: var(--font-display), Georgia, serif; font-size: 1.8rem; font-weight: 500; margin: 28px 0 14px; }
+.help { line-height: 1.8; font-size: .9rem; }
+.help a { text-decoration: underline; text-underline-offset: 3px; }
 .details h1 { font-family: var(--font-display), Georgia, serif; font-size: clamp(2.4rem, 4vw, 4rem); line-height: 1.05; margin: 14px 0 24px; }
 .price { font-size: 1.8rem; margin: 0 0 12px; }
 .price small { font-size: 1rem; }

@@ -3297,7 +3297,7 @@
     "handle": "cabernet-sauvignon-cork-sunglasses",
     "type": "Sunglasses",
     "fulfillment": "local",
-    "description": "This style embodies the unique taste of Cabernet Sauvignon wine. The classic flavor of Cabernet Sauvignon tends to be full-bodied wine with high tannins and noticeable acidity that contributes to the wine's aging potential.\nCabernet Sauvignon tends to produce wines with blackcurrant notes that can be accompanied by green bell pepper notes, mint and cedar which will all become more pronounced as the wine ages.\nLens are 400 UVA/B rated",
+    "description": "Cabernet Sauvignon cork sunglasses combine warm cork detailing with distinctive violet mirrored lenses. A bold original inspired by wine country.\n• Cork frame detailing\n• Violet mirrored lenses\n• UV400 UVA/B-rated lenses\nNatural cork patterns vary from pair to pair.",
     "image": "/products/cabernet-sauvignon-cork-sunglasses.jpg",
     "available": false,
     "variants": [
@@ -3309,6 +3309,10 @@
         "available": false,
         "sku": null
       }
+    ],
+    "images": [
+      "/products/cabernet-sauvignon-cork-sunglasses.jpg",
+      "/brand/cabernet.jpg"
     ]
   },
   {
@@ -3317,7 +3321,7 @@
     "handle": "syrah-cork-sunglasses",
     "type": "Sunglasses",
     "fulfillment": "local",
-    "description": "The Syrah Cork Sunglasses — inspired by the bold, full-bodied flavor profile of Syrah wine. Each pair features a unique cork frame element, making every set one-of-a-kind. Show off your style and your taste in both wine and accessories.\nWear your Bitcoin — optional Bitcoin value loaded directly onto each pair, so your sunglasses double as a wearable store of value.\n• Unique cork frame element\n• Optional Bitcoin value available (select variant)\n• Limited stock — each pair is unique",
+    "description": "Syrah cork sunglasses bring distinctive wine-country character to a classic clubmaster silhouette. Natural cork detailing gives each pair its own pattern.\n• Clubmaster-style frame with cork detailing\n• Dark lenses and warm metal accents\n• Natural variation makes every pair unique\nA useful companion for vineyard visits, outdoor tastings, and everyday sunshine.",
     "image": "/products/syrah-cork-sunglasses.jpg",
     "available": true,
     "variants": [
@@ -3329,6 +3333,10 @@
         "available": true,
         "sku": null
       }
+    ],
+    "images": [
+      "/products/syrah-cork-sunglasses.jpg",
+      "/brand/syrah.jpg"
     ]
   }
 ]

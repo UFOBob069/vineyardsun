@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "snapshot:shopify": "node scripts/snapshot-shopify.mjs",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern .next"
   },
   "dependencies": {

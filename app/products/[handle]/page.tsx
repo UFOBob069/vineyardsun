@@ -1,7 +1,10 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicCatalog, productUrl, SITE_URL } from "../../lib/public-catalog";
-import { Purchase } from "./Purchase";
+import { ProductDetails } from "./ProductDetails";
+import { ShopHeader } from "../../components/ShopHeader";
+import { configuredShippingCents } from "../../lib/shipping";
 import { googleDetails } from "../../lib/google-products";
 import styles from "./product.module.css";
 
@@ -33,45 +36,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function ProductPage(props: Props) {
   const { product, variant } = await selection(props);
-  const detail = googleDetails(product, variant);
-  const images = detail.image ? [detail.image] : product.images;
-  const schema = {
-    "@context": "https://schema.org", "@type": "Product",
-    name: product.title, description: product.description,
-    image: images.map((image) => new URL(image, SITE_URL).href),
-    ...(detail.color ? { color: detail.color } : {}),
-    ...(detail.size ? { size: detail.size } : {}),
-    sku: variant.sku ?? String(variant.id),
-    brand: { "@type": "Brand", name: "Vineyard Sun" },
-    offers: { "@type": "Offer", url: productUrl(product.handle, variant.id),
-      price: variant.price.toFixed(2), priceCurrency: "USD",
-      itemCondition: "https://schema.org/NewCondition",
-      availability: product.available && variant.available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      seller: { "@type": "Organization", name: "Vineyard Sun" } },
-  };
+  const detailedProduct = { ...product, variants: product.variants.map(v => ({ ...v, ...googleDetails(product, v) })) };
   return <div className="site-shell">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
-    <header className="site-header"><a className="wordmark" href="/">VINEYARD <span>SUN</span></a><a href="/#catalog">Shop the collection</a></header>
+    <ShopHeader />
     <main className={styles.main}>
-      <nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/#catalog">Shop</a> / {product.title}</nav>
-      <div className={styles.product}>
-        <div className={styles.images}>{images.map((src, i) => <img key={src} src={src} alt={i ? `${product.title} — view ${i + 1}` : product.title} loading={i ? "lazy" : "eager"} />)}</div>
-        <section className={styles.details}>
-          <p className="eyebrow">{product.fulfillment === "printful" ? "Made to order by Printful" : "Ships from our studio"}</p>
-          <h1>{product.title}</h1>
-          <p className={styles.price}>${variant.price.toFixed(2)} <small>USD</small></p>
-          <p>{product.available && variant.available ? "In stock" : "Sold out"}{variant.title !== "Default Title" ? ` · ${variant.title}` : ""}</p>
-          {product.variants.length > 1 && <form method="get" className={styles.options}>
-            <label htmlFor="variant">Choose an option</label>
-            <select id="variant" name="variant" defaultValue={variant.id}>{product.variants.map((v) => <option key={v.id} value={v.id}>{v.title} · ${v.price.toFixed(2)}{!v.available ? " · Sold out" : ""}</option>)}</select>
-            <button type="submit" className="button button-outline">Update selection</button>
-          </form>}
-          <Purchase product={product} variant={variant} />
-          <p className={styles.note}>Shipping and applicable taxes are calculated at checkout. Ships within the United States.</p>
-          <div className={styles.description}>{product.description.split("\n").filter(Boolean).map((text, i) => <p key={i}>{text}</p>)}</div>
-        </section>
-      </div>
+      <nav aria-label="Breadcrumb"><Link href="/">Home</Link> / <Link href="/#catalog">Shop</Link> / {product.title}</nav>
+      <ProductDetails key={`${product.handle}:${variant.id}`} product={detailedProduct} initialVariantId={variant.id} shippingCents={configuredShippingCents()} />
     </main>
-    <footer className={styles.footer}><a href="/#catalog">Continue shopping</a><a href="mailto:info@vineyardsun.com">Contact Vineyard Sun</a></footer>
+    <footer className={styles.footer}><Link href="/#catalog">Continue shopping</Link><Link href="/shipping-returns">Shipping &amp; returns</Link><Link href="/privacy">Privacy</Link><a href="mailto:info@vineyardsun.com">Contact Vineyard Sun</a></footer>
   </div>;
 }

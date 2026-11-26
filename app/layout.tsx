@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Work_Sans } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
+import { CartProvider } from "./components/CartProvider";
 
 const display = Cormorant_Garamond({
   variable: "--font-display",
@@ -69,7 +70,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable}`}>{children}</body>
+      <body className={`${display.variable} ${sans.variable}`}><CartProvider>{children}</CartProvider></body>
     </html>
   );
 }

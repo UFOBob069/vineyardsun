@@ -1,3 +1,4 @@
+import { configuredShippingCents } from "./lib/shipping";
 import { Storefront } from "./Storefront";
 import { getMerchandisingSettings } from "../db/merchandising";
 import { getSyncedCatalogProducts } from "../db/synced-products";
@@ -18,6 +19,7 @@ export default async function Home() {
     ]);
   return (
     <Storefront
+      shippingCents={configuredShippingCents()}
       initialHiddenHandles={hiddenProductHandles}
       initialProductImageSettings={productImageSettings}
       initialSyncedProducts={syncedProducts}

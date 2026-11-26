@@ -8,19 +8,16 @@ import {
   type MouseEvent,
 } from "react";
 import catalogData from "./data/catalog.json";
+import { useCart, BagButton } from "./components/CartProvider";
+import { ShippingNote } from "./components/ShippingNote";
+import { track } from "./lib/analytics";
+import { googleDetails } from "./lib/google-products";
 import merchandisingData from "./data/merchandising.json";
 import type { CatalogProduct, CatalogVariant } from "./lib/catalog";
 import type { ProductImageSettings } from "./lib/product-image-settings";
 
 type Variant = CatalogVariant;
 type Product = CatalogProduct;
-
-type CartLine = {
-  variantId: number;
-  productId: number;
-  productHandle?: string;
-  quantity: number;
-};
 
 type Filter = "all" | "eyewear" | "apparel" | "home";
 
@@ -71,7 +68,7 @@ const partners = [
     href: null,
   },
 ] as const;
-const CART_STORAGE_KEY = "vineyard-sun-cart-v1";
+
 
 function money(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -103,20 +100,18 @@ export function Storefront({
   initialHiddenHandles,
   initialProductImageSettings,
   initialSyncedProducts,
+  shippingCents,
 }: {
   initialHiddenHandles: string[];
   initialProductImageSettings: ProductImageSettings;
   initialSyncedProducts: Product[];
+  shippingCents: number;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [cartOpen, setCartOpen] = useState(false);
+  const { add, ready } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cart, setCart] = useState<CartLine[]>([]);
-  const [cartReady, setCartReady] = useState(false);
-  const [checkoutPending, setCheckoutPending] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const allProducts = useMemo(
     () => [...(catalogData as Product[]), ...initialSyncedProducts],
@@ -172,29 +167,9 @@ export function Storefront({
   );
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(CART_STORAGE_KEY);
-      // Restoring device-local cart state after hydration avoids an SSR mismatch.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (stored) setCart(JSON.parse(stored) as CartLine[]);
-    } catch {
-      window.localStorage.removeItem(CART_STORAGE_KEY);
-    } finally {
-      setCartReady(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (cartReady) {
-      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    }
-  }, [cart, cartReady]);
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSelectedProduct(null);
-        setCartOpen(false);
         setMenuOpen(false);
       }
     };
@@ -215,107 +190,10 @@ export function Storefront({
     });
   }, [filter, products, query]);
 
-  const cartDetails = cart
-    .map((line) => {
-      const product = allProducts.find(
-        (item) =>
-          (line.productHandle && item.handle === line.productHandle) ||
-          (!line.productHandle && item.id === line.productId),
-      );
-      const variant = product?.variants.find(
-        (item) => item.id === line.variantId,
-      );
-      return product && variant ? { ...line, product, variant } : null;
-    })
-    .filter((line): line is NonNullable<typeof line> => Boolean(line));
-
-  const cartQuantity = cart.reduce((sum, line) => sum + line.quantity, 0);
-  const cartTotal = cartDetails.reduce(
-    (sum, line) => sum + line.variant.price * line.quantity,
-    0,
-  );
-
   const addToCart = (product: Product, variant: Variant) => {
-    setCart((current) => {
-      const existing = current.find(
-        (line) =>
-          line.variantId === variant.id &&
-          (line.productHandle === product.handle ||
-            (!line.productHandle && line.productId === product.id)),
-      );
-      if (existing) {
-        return current.map((line) =>
-          line.variantId === variant.id &&
-          (line.productHandle === product.handle ||
-            (!line.productHandle && line.productId === product.id))
-            ? { ...line, quantity: Math.min(line.quantity + 1, 10) }
-            : line,
-        );
-      }
-      return [
-        ...current,
-        {
-          productId: product.id,
-          productHandle: product.handle,
-          variantId: variant.id,
-          quantity: 1,
-        },
-      ];
-    });
+    if (!ready) return;
+    add(product, variant);
     setSelectedProduct(null);
-    setCartOpen(true);
-  };
-
-  const updateQuantity = (
-    productHandle: string,
-    variantId: number,
-    quantity: number,
-  ) => {
-    setCart((current) =>
-      quantity <= 0
-        ? current.filter(
-            (line) =>
-              line.variantId !== variantId ||
-              (line.productHandle ?? productHandle) !== productHandle,
-          )
-        : current.map((line) =>
-            line.variantId === variantId &&
-            (line.productHandle ?? productHandle) === productHandle
-              ? { ...line, quantity: Math.min(quantity, 10) }
-              : line,
-          ),
-    );
-  };
-
-  const startCheckout = async () => {
-    if (!cartDetails.length || checkoutPending) return;
-    setCheckoutPending(true);
-    setCheckoutError("");
-
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lines: cartDetails.map((line) => ({
-            productId: line.productId,
-            variantId: line.variantId,
-            productHandle: line.product.handle,
-            quantity: line.quantity,
-          })),
-        }),
-      });
-      const result = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !result.url) {
-        throw new Error(result.error || "Checkout could not start.");
-      }
-      window.location.assign(result.url);
-    } catch (error) {
-      setCheckoutError(
-        error instanceof Error ? error.message : "Checkout could not start.",
-      );
-      setCheckoutPending(false);
-    }
   };
 
   const focusCatalog = () => {
@@ -348,14 +226,7 @@ export function Storefront({
           >
             Search
           </button>
-          <button
-            className="bag-button"
-            type="button"
-            onClick={() => setCartOpen(true)}
-            aria-label={`Open shopping bag with ${cartQuantity} items`}
-          >
-            Bag <span>{cartQuantity}</span>
-          </button>
+          <BagButton />
           <button
             className="menu-button"
             type="button"
@@ -378,9 +249,10 @@ export function Storefront({
               Cork-framed originals, sunny-day essentials, and a side collection
               for people who appreciate a good story.
             </p>
-            <a className="button button-light" href="#catalog">
-              Shop the collection
-            </a>
+            <div className="hero-actions">
+              <a className="button button-light" href="#catalog" onClick={() => { setFilter("eyewear"); setQuery(""); }}>Shop sunglasses</a>
+              <a className="button button-outline-light" href="/custom-vineyard-sunglasses" onClick={() => track("winery_cta_clicked", { funnel: "wholesale" })}>Custom orders for wineries ↗</a>
+            </div>
           </div>
           <div className="hero-caption">Vineyard Sun · California</div>
         </section>
@@ -389,6 +261,12 @@ export function Storefront({
           <p><span>01</span> Independent since 2017</p>
           <p><span>02</span> Small-batch favorites</p>
           <p><span>03</span> Wine-country originals</p>
+        </section>
+
+        <section className="partner-proof" aria-label="Vineyard Sun stockists and collaborators">
+          <p>Working with vineyards worldwide since 2016</p>
+          <div>{partners.slice(0, 3).map(partner => <a key={partner.name} href="#partners"><img src={partner.image} alt={partner.name} loading="lazy" /></a>)}</div>
+          <a href="/custom-vineyard-sunglasses" onClick={() => track("winery_cta_clicked", { funnel: "wholesale" })}>Create something for your vineyard →</a>
         </section>
 
         {featuredProduct && (
@@ -760,6 +638,8 @@ export function Storefront({
             <a href="#about">About us</a>
             <a href="#partners">Partners</a>
             <a href="#reviews">Reviews</a>
+            <a href="/shipping-returns">Shipping &amp; returns</a>
+            <a href="/privacy">Privacy</a>
           </div>
           <div>
             <h3>Follow</h3>
@@ -784,20 +664,10 @@ export function Storefront({
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onAdd={addToCart}
+          shippingCents={shippingCents}
         />
       )}
 
-      {cartOpen && (
-        <CartDrawer
-          lines={cartDetails}
-          total={cartTotal}
-          checkoutPending={checkoutPending}
-          checkoutError={checkoutError}
-          onCheckout={startCheckout}
-          onClose={() => setCartOpen(false)}
-          onUpdate={updateQuantity}
-        />
-      )}
     </div>
   );
 }
@@ -865,15 +735,18 @@ function ProductDialog({
   product,
   onClose,
   onAdd,
+  shippingCents,
 }: {
   product: Product;
+  shippingCents: number;
   onClose: () => void;
   onAdd: (product: Product, variant: Variant) => void;
 }) {
   const firstAvailable =
     product.variants.find((variant) => variant.available) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstAvailable.id);
-  const [activeImage, setActiveImage] = useState(product.image);
+  const [activeImage, setActiveImage] = useState(googleDetails(product, firstAvailable).image);
+  useEffect(() => { track("product_view", { productHandle: product.handle }); }, [product.handle]);
   const selectedVariant =
     product.variants.find((variant) => variant.id === variantId) ?? firstAvailable;
 
@@ -924,7 +797,7 @@ function ProductDialog({
               <span>Choose an option</span>
               <select
                 value={variantId}
-                onChange={(event) => setVariantId(Number(event.target.value))}
+                onChange={(event) => { const id = Number(event.target.value); setVariantId(id); const variant = product.variants.find(option => option.id === id); if (variant) setActiveImage(googleDetails(product, variant).image); track("variant_changed", { productHandle: product.handle, variantId: id }); }}
               >
                 {product.variants.map((variant) => (
                   <option
@@ -947,6 +820,8 @@ function ProductDialog({
           >
             {selectedVariant.available ? "Add to bag" : "Sold out"}
           </button>
+          <ShippingNote shippingCents={shippingCents} madeToOrder={product.fulfillment === "printful"} />
+          <a className="product-details-link" href={`/products/${product.handle}?variant=${selectedVariant.id}`}>Full product details &amp; photos →</a>
           <div className="dialog-description">
             {product.description
               .split("\n")
@@ -957,132 +832,6 @@ function ProductDialog({
           </div>
         </div>
       </section>
-    </div>
-  );
-}
-
-function CartDrawer({
-  lines,
-  total,
-  checkoutPending,
-  checkoutError,
-  onCheckout,
-  onClose,
-  onUpdate,
-}: {
-  lines: Array<CartLine & { product: Product; variant: Variant }>;
-  total: number;
-  checkoutPending: boolean;
-  checkoutError: string;
-  onCheckout: () => void;
-  onClose: () => void;
-  onUpdate: (productHandle: string, variantId: number, quantity: number) => void;
-}) {
-  return (
-    <div
-      className="drawer-backdrop"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <aside
-        className="cart-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="cart-title"
-      >
-        <div className="drawer-heading">
-          <div>
-            <p className="eyebrow">Your selection</p>
-            <h2 id="cart-title">Shopping bag</h2>
-          </div>
-          <button className="close-button" type="button" onClick={onClose} aria-label="Close cart">
-            ×
-          </button>
-        </div>
-
-        {lines.length ? (
-          <>
-            <div className="cart-lines">
-              {lines.map((line) => (
-                <article
-                  className="cart-line"
-                  key={`${line.product.handle}:${line.variant.id}`}
-                >
-                  <div className="cart-line-image">
-                    {line.product.image && (
-                      <img src={line.product.image} alt="" />
-                    )}
-                  </div>
-                  <div className="cart-line-copy">
-                    <h3>{line.product.title}</h3>
-                    {line.variant.title !== "Default Title" && (
-                      <p>{line.variant.title}</p>
-                    )}
-                    <span>{money(line.variant.price)}</span>
-                    <div className="quantity-control" aria-label="Quantity controls">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdate(
-                            line.product.handle,
-                            line.variant.id,
-                            line.quantity - 1,
-                          )
-                        }
-                        aria-label={`Decrease ${line.product.title} quantity`}
-                      >
-                        −
-                      </button>
-                      <span>{line.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdate(
-                            line.product.handle,
-                            line.variant.id,
-                            line.quantity + 1,
-                          )
-                        }
-                        aria-label={`Increase ${line.product.title} quantity`}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <div className="cart-summary">
-              <div>
-                <span>Subtotal</span>
-                <strong>{money(total)}</strong>
-              </div>
-              <p>Shipping is shown before you pay.</p>
-              <button
-                className="button button-dark button-wide"
-                type="button"
-                disabled={checkoutPending}
-                onClick={onCheckout}
-              >
-                {checkoutPending ? "Opening checkout…" : "Continue to checkout"}
-              </button>
-              {checkoutError && (
-                <p className="checkout-error" role="alert">{checkoutError}</p>
-              )}
-              <span className="checkout-note">Cards · Apple Pay · Google Pay</span>
-            </div>
-          </>
-        ) : (
-          <div className="empty-cart">
-            <p>Your bag is enjoying the shade.</p>
-            <button className="button button-dark" type="button" onClick={onClose}>
-              Browse the collection
-            </button>
-          </div>
-        )}
-      </aside>
     </div>
   );
 }

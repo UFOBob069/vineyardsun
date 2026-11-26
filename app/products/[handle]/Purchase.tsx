@@ -1,32 +1,19 @@
 "use client";
+import Link from "next/link";
 
 import { useState } from "react";
 import type { CatalogProduct, CatalogVariant } from "../../lib/catalog";
+import { useCart } from "../../components/CartProvider";
 
 export function Purchase({ product, variant }: { product: CatalogProduct; variant: CatalogVariant }) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  async function checkout() {
-    setPending(true);
-    setError("");
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines: [{ productId: product.id, productHandle: product.handle, variantId: variant.id, quantity: 1 }] }),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.url) throw new Error(result.error || "Checkout could not start. Please try again.");
-      window.location.assign(result.url);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Checkout could not start. Please try again.");
-      setPending(false);
-    }
-  }
-  return <>
-    <button className="button button-dark button-wide" onClick={checkout} disabled={pending || !product.available || !variant.available}>
-      {!product.available || !variant.available ? "Sold out" : pending ? "Opening checkout…" : "Buy now"}
-    </button>
-    {error && <p role="alert">{error}</p>}
-  </>;
+  const [quantity, setQuantity] = useState(1);
+  const { ready, add, checkout, pending, error } = useCart();
+  const available = product.available && variant.available;
+  return <div className="purchase-controls">
+    {available && <label className="purchase-quantity">Quantity<select value={quantity} onChange={e => setQuantity(Number(e.target.value))}>{Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>}
+    <button className="button button-dark button-wide" disabled={!ready || pending || !available} onClick={() => add(product, variant, quantity)}>{available ? "Add to bag" : "Sold out"}</button>
+    {available && <button className="button buy-now button-wide" disabled={!ready || pending} onClick={() => checkout([{ productId: product.id, productHandle: product.handle, variantId: variant.id, quantity }], "direct")}>{pending ? "Opening checkout…" : "Buy now"}</button>}
+    {!available && <Link href="/products/syrah-cork-sunglasses">Explore Syrah sunglasses →</Link>}
+    {error && <p className="checkout-error" role="alert">{error}</p>}
+  </div>;
 }

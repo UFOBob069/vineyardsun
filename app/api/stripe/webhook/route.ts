@@ -1,3 +1,5 @@
+import { recordConversion, isConversionTest } from "../../../../db/conversions";
+import { sessionId as parseSessionId } from "../../../lib/conversion-validation";
 import type Stripe from "stripe";
 import { submitPrintfulOrder } from "../../../lib/printful";
 import { getStripe, getWebhookSecret } from "../../../lib/stripe";
@@ -41,6 +43,8 @@ async function fulfillPaidSession(session: Stripe.Checkout.Session) {
     totalCents: session.amount_total ?? 0,
   });
   if (!order) throw new Error("Paid Stripe session did not match a stored order.");
+  await recordConversion({ id: `purchase:${orderId}`, sessionId: parseSessionId(session.metadata?.analytics_session_id), name: "purchase", funnel: "retail", path: "/order/success", valueCents: session.amount_total ?? 0, isTest: !session.livemode || isConversionTest() });
+
 
   // The production Printful account is real even while Stripe uses test mode.
   // Never manufacture a test purchase unless the owner explicitly opts in.

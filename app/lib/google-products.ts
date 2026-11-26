@@ -23,6 +23,6 @@ export function googleCategory(product: CatalogProduct) {
 }
 
 export function xml(value: string | number) {
-  return String(value).replace(/[&<>\"']/g, (character) =>
+  return String(value).replace(/[&<>"']/g, (character) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[character]!));
 }

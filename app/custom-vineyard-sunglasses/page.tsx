@@ -1,4 +1,7 @@
+import Link from "next/link";
 import type { Metadata } from "next";
+import { EnquiryForm } from "./EnquiryForm";
+import { ShopHeader } from "../components/ShopHeader";
 import styles from "./custom.module.css";
 
 const url = "https://www.vineyardsun.com/custom-vineyard-sunglasses";
@@ -26,10 +29,7 @@ export default function CustomVineyardSunglasses() {
   };
   return <div className={`site-shell ${styles.page}`}>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
-    <header className={styles.header}>
-      <a className="wordmark" href="/" aria-label="Vineyard Sun home">VINEYARD <span>SUN</span></a>
-      <nav aria-label="Main navigation"><a href="/#catalog">Shop</a><a href="/#partners">Our partners</a><a href="#enquire">Enquire</a></nav>
-    </header>
+    <ShopHeader />
     <main>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
@@ -37,7 +37,7 @@ export default function CustomVineyardSunglasses() {
           <h1>Custom sunglasses for vineyards &amp; wineries.</h1>
           <p className={styles.lead}>Your vineyard has a story. Let your sunglasses tell it.</p>
           <p>We&apos;ve been working with vineyards across the world since 2016. From a tasting-room keepsake to a gift for your wine club, Vineyard Sun creates custom, bespoke sunglasses designed around your needs.</p>
-          <a className="button button-dark" href={enquiry}>Discuss your custom sunglasses <span aria-hidden="true">↗</span></a>
+          <a className="button button-dark" href="#enquire">Discuss your custom sunglasses <span aria-hidden="true">↗</span></a>
           <a className={styles.secondary} href="#the-details">Explore the possibilities ↓</a>
         </div>
         <figure className={styles.heroImage}>
@@ -61,7 +61,7 @@ export default function CustomVineyardSunglasses() {
 
       <section className={styles.experience}>
         <div><p className="eyebrow light">Vineyard relationships since 2016</p><h2>Wine country has taken us around the world.</h2></div>
-        <div><p>Working with vineyards worldwide has been part of Vineyard Sun&apos;s story since 2016. Our wider community of stockists and collaborators reaches from Texas and Washington to Ontario and France.</p><p>Each winery brings its own identity, setting, and ideas. We take that as the starting point for a conversation about sunglasses that belong to your brand.</p><a className={styles.lightLink} href="/#partners">Meet our stockists &amp; collaborators →</a></div>
+        <div><p>Working with vineyards worldwide has been part of Vineyard Sun&apos;s story since 2016. Our wider community of stockists and collaborators reaches from Texas and Washington to Ontario and France.</p><p>Each winery brings its own identity, setting, and ideas. We take that as the starting point for a conversation about sunglasses that belong to your brand.</p><Link className={styles.lightLink} href="/#partners">Meet our stockists &amp; collaborators →</Link></div>
       </section>
 
       <section className={styles.feedback}>
@@ -79,17 +79,19 @@ export default function CustomVineyardSunglasses() {
         <details><summary>Can we discuss our winery&apos;s branding and design?</summary><p>Yes. Share your logo, brand guidelines, and the look you have in mind. We&apos;ll discuss the design and branding options available for your project before agreeing the final specification.</p></details>
         <details><summary>What quantity, budget, and lead time should we plan for?</summary><p>These details depend on the design and scope of your order. Include an approximate quantity, budget range, and target date in your enquiry so we can confirm what is possible for your vineyard.</p></details>
         <details><summary>Do you work with vineyards outside the United States?</summary><p>We&apos;ve worked with vineyards across the world since 2016. Tell us your location and delivery destination, and we&apos;ll confirm the options and arrangements for your project.</p></details>
-        <details><summary>Can we see Vineyard Sun&apos;s original sunglasses?</summary><p>Explore our <a href="/products/syrah-cork-sunglasses">Syrah cork sunglasses</a> and <a href="/products/cabernet-sauvignon-cork-sunglasses">Cabernet Sauvignon cork sunglasses</a> for an introduction to our eyewear. Availability and specifications for custom orders are discussed separately.</p></details>
+        <details><summary>Can we see Vineyard Sun&apos;s original sunglasses?</summary><p>Explore our <Link href="/products/syrah-cork-sunglasses">Syrah cork sunglasses</Link> and <Link href="/products/cabernet-sauvignon-cork-sunglasses">Cabernet Sauvignon cork sunglasses</Link> for an introduction to our eyewear. Availability and specifications for custom orders are discussed separately.</p></details>
       </section>
 
       <section className={styles.enquire} id="enquire">
         <p className="eyebrow">Let&apos;s start with your vineyard</p>
         <h2>Something distinctly yours.</h2>
         <p>Tell us who you are, what you have in mind, and when you need it. We&apos;ll take it from there.</p>
-        <a className="button button-dark" href={enquiry}>Enquire about custom sunglasses ↗</a>
+        <p>Custom orders are quoted individually. We agree your design, delivery, and return terms before you approve an order.</p>
+        <EnquiryForm />
+        <p>Prefer email? Send your ideas directly:</p>
         <a className={styles.email} href={enquiry}>info@vineyardsun.com</a>
       </section>
     </main>
-    <footer className={styles.footer}><a className="wordmark" href="/">VINEYARD <span>SUN</span></a><a href="/#catalog">Shop the collection →</a></footer>
+    <footer className={styles.footer}><Link className="wordmark" href="/">VINEYARD <span>SUN</span></Link><Link href="/shipping-returns">Shipping &amp; returns</Link><Link href="/privacy">Privacy</Link><Link href="/#catalog">Shop the collection →</Link></footer>
   </div>;
 }

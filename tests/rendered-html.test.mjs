@@ -18,7 +18,7 @@ test("ships the requested Vineyard Sun storefront structure", async () => {
   assert.match(storefront, /I have worn these non-stop since they arrived/);
   assert.match(storefront, /The frame material is extraordinarily lightweight/);
   assert.doesNotMatch(storefront, /Secure Shopify checkout|Powered by Shopify|Checkout with Shopify/i);
-  assert.match(storefront, /Open shopping bag/);
+  assert.match(await readFile(new URL("../app/components/CartProvider.tsx", import.meta.url), "utf8"), /Open shopping bag/);
   assert.ok(storefront.indexOf("Happiness is positive cash flow") > storefront.indexOf("The wine lover"));
   assert.ok(storefront.indexOf("About Vineyard Sun") > storefront.indexOf("Seen in the wild"));
   assert.doesNotMatch(storefront, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
@@ -53,7 +53,7 @@ test("ships a complete local catalog snapshot and Stripe checkout adapter", asyn
   assert.ok(catalog.some((product) => product.fulfillment === "printful"));
   assert.ok(catalog.some((product) => product.fulfillment === "local"));
   assert.doesNotMatch(storefront, /vineyardsun\.myshopify\.com/);
-  assert.match(storefront, /fetch\("\/api\/checkout"/);
+  assert.match(await readFile(new URL("../app/components/CartProvider.tsx", import.meta.url), "utf8"), /fetch\("\/api\/checkout"/);
   assert.match(checkout, /checkout\.sessions\.create/);
   assert.match(checkout, /findCatalogVariant/);
   assert.match(webhook, /constructEvent/);

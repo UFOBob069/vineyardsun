@@ -427,6 +427,7 @@ export function AdminClient() {
             </p>
           </div>
           <div className={styles.headingActions}>
+            <Link href="/admin/conversions">Enquiries &amp; conversions →</Link>
             <button
               className={styles.syncButton}
               disabled={syncing || saving}

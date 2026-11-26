@@ -43,6 +43,31 @@ product and default catalog order:
 Use the product handle from the product URL. For example, the embroidered pillow
 uses `premium-icahn-happiness-is-positive-cashflow-decorative-pillow`.
 
+## Conversion tools and testing
+
+The shared shopping bag persists across product pages and the homepage. A paid
+bag checkout removes only purchased quantities; direct purchases leave the bag
+alone. Pending, failed, and canceled payments do not clear it.
+
+Custom winery enquiries are saved in Neon before the visitor sees confirmation.
+Visit `/admin/conversions` after signing in to review leads, update their status,
+and see retail/wholesale event counts from the last 30 days. **Email notifications
+are not configured; check the inbox for new enquiries.** Client events exclude
+contact details and URL queries. Purchase events come from verified Stripe
+webhooks, are deduplicated, and exclude test payments from the report.
+
+`/shipping-returns` contains the consumer 30-day return guidance and separately
+quoted custom-order terms. Shipping prices use `SHIPPING_RATE_CENTS` throughout
+the bag, policy, product pages, and Stripe Checkout.
+
+Run `npm test` for the production build and regression tests. To include the
+local API/database/Stripe integration test, start the development server with
+`CONVERSION_TEST_MODE=true`, then run the tests with
+`TEST_BASE_URL=http://localhost:3017`. The integration test requires a Stripe
+test key, refuses non-local targets, and cleans up the records it creates. It
+does not make a payment or send a fulfillment order. Preview/local analytics
+and enquiries are marked as tests and omitted from production reports.
+
 ## Product catalogs and images
 
 Run `npm run snapshot:shopify` to refresh the public catalog snapshot, then run

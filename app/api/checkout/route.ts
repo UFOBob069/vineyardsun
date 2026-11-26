@@ -1,3 +1,6 @@
+import { configuredShippingCents, deliveryEstimate } from "../../lib/shipping";
+import { recordConversion, isConversionTest } from "../../../db/conversions";
+import { sessionId as parseSessionId } from "../../lib/conversion-validation";
 import type Stripe from "stripe";
 import { getMerchandisingSettings } from "../../../db/merchandising";
 import {
@@ -67,14 +70,6 @@ function parseRequestedLines(value: unknown): RequestedLine[] {
   return [...combined.values()];
 }
 
-function configuredShippingCents() {
-  const configured = Number.parseInt(process.env.SHIPPING_RATE_CENTS || "595", 10);
-  if (!Number.isSafeInteger(configured) || configured < 0 || configured > 100_000) {
-    throw new Error("SHIPPING_RATE_CENTS is invalid.");
-  }
-  return configured;
-}
-
 function siteOrigin(request: Request) {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (configured) return new URL(configured).origin;
@@ -82,6 +77,7 @@ function siteOrigin(request: Request) {
 }
 
 export async function POST(request: Request) {
+  let analyticsSessionId: string | null = null;
   let orderId: string | null = null;
 
   try {
@@ -89,7 +85,9 @@ export async function POST(request: Request) {
       return Response.json({ error: "Invalid request origin." }, { status: 403 });
     }
 
-    const requestedLines = parseRequestedLines(await request.json());
+    const payload = await request.json();
+    analyticsSessionId = parseSessionId(payload?.analyticsSessionId);
+    const requestedLines = parseRequestedLines(payload);
     const [{ hiddenProductHandles }, syncedProducts] = await Promise.all([
       getMerchandisingSettings(),
       getSyncedCatalogProducts(),
@@ -188,10 +186,7 @@ export async function POST(request: Request) {
               type: "fixed_amount",
               display_name: "Standard shipping",
               fixed_amount: { amount: shippingCents, currency: "usd" },
-              delivery_estimate: {
-                minimum: { unit: "business_day", value: 4 },
-                maximum: { unit: "business_day", value: 12 },
-              },
+              delivery_estimate: deliveryEstimate,
             },
           },
         ],
@@ -202,7 +197,7 @@ export async function POST(request: Request) {
         },
         success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/?checkout=cancelled#catalog`,
-        metadata: { order_id: orderId },
+        metadata: { order_id: orderId, ...(analyticsSessionId ? { analytics_session_id: analyticsSessionId } : {}) },
         payment_intent_data: { metadata: { order_id: orderId } },
       },
       { idempotencyKey: `vineyard-sun-checkout-${orderId}` },
@@ -210,11 +205,13 @@ export async function POST(request: Request) {
 
     if (!session.url) throw new Error("Stripe did not provide a checkout URL.");
     await attachStripeSession(orderId, session.id);
-    return Response.json({ url: session.url });
+    await recordConversion({ id: `checkout:${orderId}`, sessionId: analyticsSessionId, name: "checkout_started", funnel: "retail", path: "/", valueCents: subtotalCents, isTest: !session.livemode || isConversionTest() }).catch(() => undefined);
+    return Response.json({ url: session.url, sessionId: session.id });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Checkout failed.";
     if (orderId) await markCheckoutCreationFailed(orderId, message).catch(() => undefined);
     console.error("Checkout session creation failed", { orderId, message });
+    await recordConversion({ id: `checkout-error:${crypto.randomUUID()}`, sessionId: analyticsSessionId, name: "checkout_error", funnel: "retail", path: "/", isTest: isConversionTest() || !process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") }).catch(() => undefined);
     const clientMessage = message.startsWith("One of the selected")
       ? message
       : "Checkout could not start. Please try again.";
