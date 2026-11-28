@@ -18,7 +18,7 @@ export function ProductDetails({ product, initialVariantId, shippingCents }: { p
   const schema = { "@context": "https://schema.org", "@type": "Product", name: product.title, description: product.description,
     image: images.map(src => new URL(src, "https://www.vineyardsun.com").href), sku: variant.sku ?? String(variant.id),
     ...(variant.color ? { color: variant.color } : {}), ...(variant.size ? { size: variant.size } : {}), brand: { "@type": "Brand", name: "Vineyard Sun" },
-    offers: { "@type": "Offer", url, price: variant.price.toFixed(2), priceCurrency: "USD", itemCondition: "https://schema.org/NewCondition", availability: product.available && variant.available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", seller: { "@type": "Organization", name: "Vineyard Sun" }, ...merchantOfferPolicies(shippingCents) } };
+    offers: { "@type": "Offer", url, price: variant.price.toFixed(2), priceCurrency: "USD", itemCondition: "https://schema.org/NewCondition", availability: product.available && variant.available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", seller: { "@type": "Organization", name: "Vineyard Sun" }, ...merchantOfferPolicies(shippingCents, product.fulfillment === "printful") } };
   function select(id: number) {
     setVariantId(id); setImageIndex(0);
     const next = new URL(window.location.href); next.searchParams.set("variant", String(id)); window.history.replaceState(null, "", next);
